@@ -1,5 +1,9 @@
 import 'package:flutter/material.dart';
 import 'homescreen.dart';
+import 'searchscreen.dart';
+import 'editcatalogscreen.dart';
+import 'settingscreen.dart';
+import 'profilescreen.dart';
 
 void main() {
   runApp(const MyApp());
@@ -35,10 +39,9 @@ class _Material3BottomNavState extends State<Material3BottomNav> {
 
   final List<Widget> _pages = [
     const HomeScreen(),
-    //const SearchScreen(),
-    //const EditCatalogScreen(),
-    //const SettingScreen(),
-    //const ProfileScreen(),
+    const EditCatalogScreen(),
+    const SettingScreen(),
+    const ProfileScreen(),
   ];
 
   @override
@@ -62,19 +65,19 @@ class _Material3BottomNavState extends State<Material3BottomNav> {
 
 const _navBarItems = [
   NavigationDestination(
-    icon: Icon(Icons.home_outlined),
-    selectedIcon: Icon(Icons.home_rounded),
+    icon: Icon(Icons.menu_book_outlined),
+    selectedIcon: Icon(Icons.menu_book_rounded),
     label: 'Home',
   ),
   NavigationDestination(
-    icon: Icon(Icons.bookmark_border_outlined),
-    selectedIcon: Icon(Icons.bookmark_rounded),
-    label: 'Bookmarks',
+    icon: Icon(Icons.edit_note_outlined),
+    selectedIcon: Icon(Icons.edit_note_rounded),
+    label: 'Edit Catalog',
   ),
   NavigationDestination(
-    icon: Icon(Icons.shopping_bag_outlined),
-    selectedIcon: Icon(Icons.shopping_bag),
-    label: 'Cart',
+    icon: Icon(Icons.settings_outlined),
+    selectedIcon: Icon(Icons.settings_rounded),
+    label: 'Settings',
   ),
   NavigationDestination(
     icon: Icon(Icons.person_outline_rounded),
