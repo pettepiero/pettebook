@@ -4,8 +4,15 @@ import 'searchscreen.dart';
 import 'editcatalogscreen.dart';
 import 'settingscreen.dart';
 import 'profilescreen.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
-void main() {
+void main() async{
+  WidgetsFlutterBinding.ensureInitialized();
+
+  await Supabase.initialize(
+    url: 'https://eckybvuccyssfwicdhim.supabase.co',
+    anonKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVja3lidnVjY3lzc2Z3aWNkaGltIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg1MDE3MTYsImV4cCI6MjA5NDA3NzcxNn0.LaOeph0RiDLaph65rSR8XdqDzLW5Yiu2p04ujkO-M04',
+  );
   runApp(const MyApp());
 }
 
@@ -21,6 +28,7 @@ class MyApp extends StatelessWidget {
       theme: ThemeData(
         colorScheme: .fromSeed(seedColor: Colors.deepPurple),
         useMaterial3: true,
+        scaffoldBackgroundColor: Colors.black12,
       ),
       home: Material3BottomNav(),
     );
