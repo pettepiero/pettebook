@@ -55,7 +55,7 @@ class _Material3BottomNavState extends State<Material3BottomNav> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('This text is in the AppBar')),
+      //appBar: AppBar(title: const Text('This text is in the AppBar')),
       body: _pages[_selectedIndex],
       bottomNavigationBar: NavigationBar(
         animationDuration: const Duration(seconds: 1),

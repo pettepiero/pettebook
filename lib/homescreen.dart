@@ -28,6 +28,82 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
 
+  Widget buildCard(Map<String, dynamic> book) {
+    final String title = book['title'] ?? 'Untitled';
+    final String author = book['author'] ?? 'Unknown Author';
+
+    final String? isbn = book['isbn'];
+
+    final String imageUrl = isbn != null && isbn.isNotEmpty
+      ? 'https://covers.openlibrary.org/b/isbn/$isbn-M.jpg'
+      : '';
+
+    return Container(
+      width: 150,
+      padding: const EdgeInsets.all(12.0),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.05),
+            blurRadius: 8,
+            offset: const Offset(0, 4),
+          ),
+        ],
+        border: Border.all(color: Colors.grey.shade200),
+      ), 
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Expanded(
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(8),
+              child: imageUrl.isNotEmpty
+                ? Image.network(
+                  imageUrl,
+                  width: double.infinity,
+                  fit: BoxFit.cover,
+                  loadingBuilder: (context, child, loadingProgress) {
+                    if (loadingProgress == null) return child;
+                    return const Center(child: CircularProgressIndicator());
+                  },
+                  errorBuilder: (context, error, stackTrace) {
+                    return _buildImagePlaceholder();
+                  },
+                )
+              : _buildImagePlaceholder(),
+            ),
+
+          ),
+          const SizedBox(height: 12),
+          Text(
+            title,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            author,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: TextStyle(color: Colors.grey.shade700, fontSize: 12)
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildImagePlaceholder() {
+    return Container(
+      width: double.infinity,
+      color: Colors.deepPurple.shade50,
+      child: const Icon(Icons.book, size: 48, color: Colors.deepPurple)
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -49,7 +125,14 @@ class _HomeScreenState extends State<HomeScreen> {
               hintText: 'Start typing to search books...',
             ),
             const SizedBox(height: 16),
-            Expanded(
+            const Text(
+              "Random book generator",
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)
+            ),
+            const SizedBox(height: 8),
+
+            SizedBox(
+              height: 200,
               child: FutureBuilder<List<Map<String, dynamic>>>(
                 future: _booksFuture,
                 builder: (context, snapshot) {
@@ -67,32 +150,56 @@ class _HomeScreenState extends State<HomeScreen> {
                   }
 
                   return ListView.builder(
+                    scrollDirection: Axis.horizontal,
+                    physics: const BouncingScrollPhysics(),
                     itemCount: books.length,
                     itemBuilder: (context, index) {
                       final book = books[index];
 
-                      final String title = book['title'] ?? 'Unknown Title';
-                      final String author = book['author'] ?? 'Unknown Author';
-
-                      return Card(
-                        margin: const EdgeInsets.symmetric(vertical: 4.0),
-                        child: ListTile(
-                          leading: const Icon(Icons.book, color: Colors.deepPurple),
-                          title: Text(title, style: const TextStyle(fontWeight: FontWeight.bold)),
-                          subtitle: Text(author),
-                          onTap: () {
-
-                          },
-                        )
+                      return Padding(
+                        padding: const EdgeInsets.only(right:  12.0),
+                        child: buildCard(book),
                       );
-                    }
+                    },
                   );
                 },
-              ))
-          ],
+              ),
+            ),
 
-        )
-        
+            const SizedBox(height: 24),
+
+            const Text(
+              "Other people are reading...",
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)
+            ),
+            const SizedBox(height: 8),
+
+            SizedBox(
+              height: 150,
+              child: FutureBuilder<List<Map<String, dynamic>>>(
+                future: _booksFuture,
+                builder: (context, snapshot) {
+                
+                final books = snapshot.data ?? [];
+
+                  return ListView.builder(
+                    scrollDirection: Axis.horizontal,
+                    physics: const BouncingScrollPhysics(),
+                    itemCount: books.length,
+                    itemBuilder: (context, index) {
+                      final book = books[index];
+
+                      return Padding(
+                        padding: const EdgeInsets.only(right:  12.0),
+                        child: buildCard(book),
+                      );
+                    },
+                  );
+                }
+              ),
+            )
+          ],
+        ),
       )
     );
   }
