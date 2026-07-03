@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:pettebook/components.dart';
 import 'package:pettebook/searchscreen.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -112,17 +113,9 @@ class _HomeScreenState extends State<HomeScreen> {
         padding: const .all(8.0),
         child: Column(
           children: [
-            SearchBar(
-              padding: const WidgetStatePropertyAll<EdgeInsets>(
-                EdgeInsets.symmetric(horizontal: 16.0),
-              ),
-              onTap: () {
-                Navigator.of(context).push(
-                  MaterialPageRoute(builder: (context) => const SearchScreen()),
-                );
-              },
-              leading: const Icon(Icons.search),
-              hintText: 'Start typing to search books...',
+            MySearchBar(
+                targetSearchScreenBuilder: (context) => const SearchScreen(),
+                hintText: "Type to search catalog..."
             ),
             const SizedBox(height: 16),
             const Text(

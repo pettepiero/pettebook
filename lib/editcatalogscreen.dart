@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'scanormanual.dart';
 
 class EditCatalogScreen extends StatefulWidget {
   const EditCatalogScreen({super.key});
@@ -9,7 +10,8 @@ class EditCatalogScreen extends StatefulWidget {
 
 class _EditCatalogScreenState extends State<EditCatalogScreen> {
   final List<GridItemData> _gridItems = [
-    GridItemData(title: "Add Books", color: Colors.teal[100]!, icon: Icon(Icons.add_circle_outlined),targetPage: const AddBooksPage()),
+    // GridItemData(title: "Add Books", color: Colors.teal[100]!, icon: Icon(Icons.add_circle_outlined),targetPage: const AddBooksPage()),
+    GridItemData(title: "Add Books", color: Colors.teal[100]!, icon: Icon(Icons.add_circle_outlined),targetPage: const ScanOrManualScreen()),
     GridItemData(title: "Remove Books", color: Colors.teal[200]!, icon: Icon(Icons.remove_circle_outlined), targetPage: const RemoveBooksPage()),
     GridItemData(title: "Rearrange Shelves", color: Colors.teal[300]!, icon: Icon(Icons.swap_calls_outlined), targetPage: const RearrangeShelvesPage()),
     GridItemData(title: "Edit Books", color: Colors.teal[400]!, icon: Icon(Icons.edit_outlined), targetPage: const EditBooksPage()),
@@ -18,7 +20,7 @@ class _EditCatalogScreenState extends State<EditCatalogScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text("This is the Edit Catalog screen.")),
+      appBar: AppBar(title: const Text("Edit Catalog"), centerTitle: true,),
       body: Center(
         child: Padding(
           padding: const EdgeInsets.all(24.0),
@@ -60,10 +62,10 @@ class _EditCatalogScreenState extends State<EditCatalogScreen> {
                                     ),
                                 ),
                               ),
-                              const SizedBox(height: 20.0),
                               Text(
                                 item.title,
                                 style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 20)),
+                              const SizedBox(height: 20.0),
                             ]
                         ),
                       ),
