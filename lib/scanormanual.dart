@@ -13,7 +13,8 @@ class ScanOrManualScreen extends StatefulWidget {
 class _ScanOrManualScreenState extends State<ScanOrManualScreen> {
   final List<GridItemData> _gridItems = [
     GridItemData(title: "Scan ISBN", color: Colors.teal[100]!, icon: Icon(Icons.barcode_reader), targetPage: const BarCodeReaderScreen()),
-    GridItemData(title: "Manual Entry", color: Colors.teal[200]!, icon: Icon(Icons.search), targetPage: const ManualEntryScreen()),
+    //GridItemData(title: "Manual Entry", color: Colors.teal[200]!, icon: Icon(Icons.search), targetPage: const ManualEntryScreen()),
+    GridItemData(title: "Manual Entry", color: Colors.teal[200]!, icon: Icon(Icons.search), targetPage: const SearchScreen()),
   ];
 
   @override
