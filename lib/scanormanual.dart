@@ -2,6 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:pettebook/components.dart';
 import 'package:pettebook/editcatalogscreen.dart';
 import 'package:pettebook/searchscreen.dart';
+import 'package:pettebook/datafetching.dart';
+
+
+List<String> myBooks = ['1984', 'Dune', 'Narnia'];
 
 class ScanOrManualScreen extends StatefulWidget {
   const ScanOrManualScreen({super.key});
@@ -14,7 +18,14 @@ class _ScanOrManualScreenState extends State<ScanOrManualScreen> {
   final List<GridItemData> _gridItems = [
     GridItemData(title: "Scan ISBN", color: Colors.teal[100]!, icon: Icon(Icons.barcode_reader), targetPage: const BarCodeReaderScreen()),
     //GridItemData(title: "Manual Entry", color: Colors.teal[200]!, icon: Icon(Icons.search), targetPage: const ManualEntryScreen()),
-    GridItemData(title: "Manual Entry", color: Colors.teal[200]!, icon: Icon(Icons.search), targetPage: const SearchScreen()),
+    GridItemData(
+        title: "Manual Entry",
+        color: Colors.teal[200]!,
+        icon: Icon(Icons.search),
+        targetPage: SearchScreen(
+          onSearch: (query) => localSearch(myBooks, query),
+        ),
+    ),
   ];
 
   @override
@@ -97,7 +108,9 @@ class ManualEntryScreen extends StatelessWidget {const ManualEntryScreen({super.
       body: Padding(
         padding: const .all(8.0),
         child: MySearchBar(
-            targetSearchScreenBuilder: (context) => const SearchScreen(),
+            targetSearchScreenBuilder: (context) => SearchScreen(
+              onSearch: (query) => localSearch(myBooks, query),
+            ),
             hintText: 'Type book here...',
         )
       ),

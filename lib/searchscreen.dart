@@ -104,8 +104,3 @@ class _SearchScreenState extends State<SearchScreen> {
     );
   }
 }
-
-List<String> localSearch(String query) {
-
-
-};

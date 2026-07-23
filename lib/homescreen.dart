@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:pettebook/components.dart';
 import 'package:pettebook/searchscreen.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:pettebook/datafetching.dart';
 
 class HomeScreen extends StatefulWidget{
   const HomeScreen({super.key});
@@ -105,6 +106,21 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
+
+  // LOCAL SEARCH OF BOOKS
+  final List<String> _localBooks = [
+    'The Great Gatsby',
+    '1984',
+    'To Kill a Mockingbird',
+    'The Lord of the Rings',
+    'Pride and Prejudice',
+    'The Hobbit',
+    'Dune',
+    'Harry Potter',
+  ];
+
+
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -114,7 +130,10 @@ class _HomeScreenState extends State<HomeScreen> {
         child: Column(
           children: [
             MySearchBar(
-                targetSearchScreenBuilder: (context) => const SearchScreen(),
+                targetSearchScreenBuilder: (context) => SearchScreen(
+                  //onSearch: (query) => localSearch(_localBooks, query),
+                  onSearch: (query) => supabaseSearch(query),
+                ),
                 hintText: "Type to search catalog..."
             ),
             const SizedBox(height: 16),
