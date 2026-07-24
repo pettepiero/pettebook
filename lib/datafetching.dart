@@ -1,8 +1,6 @@
 import 'package:flutter/cupertino.dart';
 import 'package:open_library/open_library.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import 'package:open_library/open_library.dart';
-import 'package:open_library/models/ol_book_model.dart';
 import 'package:open_library/models/ol_search_model.dart';
 import 'package:provider/provider.dart';
 
@@ -68,7 +66,14 @@ Future<List<String>> openlibrarySearch(String query, BuildContext context) async
     final result = await openLib.query(title: lowerCaseQuery);
     if (result is OLSearch) {
       debugPrint('Found results: $result');
-      return result.docs.map((doc) => doc.title ?? "Unknown Title").toList();
+      return result.docs.map((doc) {
+       final title = doc.title ;
+       //final author = doc.authors ?? "Unknown Author";
+       final author = doc.authors.isNotEmpty
+           ? doc.authors.map((a) => a.name).join(', ')
+           : "Unknown Author";
+       return "$title - $author";
+      }).toList();
     }
     debugPrint('result is not OLSearch');
     return [];

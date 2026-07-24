@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:pettebook/components.dart';
 import 'package:pettebook/editcatalogscreen.dart';
 import 'package:pettebook/searchscreen.dart';
 import 'package:pettebook/datafetching.dart';
@@ -18,25 +17,28 @@ class ScanOrManualScreen extends StatefulWidget {
 }
 
 class _ScanOrManualScreenState extends State<ScanOrManualScreen> {
-  final List<GridItemData> _gridItems = [
-    GridItemData(
-        title: "Scan ISBN",
-        color: Colors.teal[100]!,
-        icon: Icon(Icons.barcode_reader),
-        targetPage: const BarCodeReaderScreen()
-    ),
-    //GridItemData(title: "Manual Entry", color: Colors.teal[200]!, icon: Icon(Icons.search), targetPage: const ManualEntryScreen()),
-    GridItemData(
-        title: "Manual Entry",
-        color: Colors.teal[200]!,
-        icon: Icon(Icons.search),
-        targetPage: ManualEntryScreen(
-        ),
-    ),
-  ];
 
   @override
   Widget build(BuildContext context) {
+
+    final List<GridItemData> _gridItems = [
+      GridItemData(
+          title: "Scan ISBN",
+          color: Colors.teal[100]!,
+          icon: Icon(Icons.barcode_reader),
+          targetPage: const BarCodeReaderScreen()
+      ),
+      GridItemData(
+        title: "Manual Entry",
+        color: Colors.teal[200]!,
+        icon: Icon(Icons.search),
+        targetPage: SearchScreen(
+          onSearch: (query) => openlibrarySearch(query, context),
+          isLiveSearch: false,
+        ),
+      ),
+    ];
+
     return Scaffold(
       appBar: AppBar(title: const Text("Choose how you want to add books."), centerTitle: true,),
       body: Center(
@@ -108,20 +110,20 @@ class BarCodeReaderScreen extends StatelessWidget {const BarCodeReaderScreen({su
   }
 }
 
-class ManualEntryScreen extends StatelessWidget {const ManualEntryScreen({super.key}); @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: Text("Manual search of desired book."), centerTitle: true,),
-      body: Padding(
-        padding: const .all(8.0),
-        child: MySearchBar(
-            targetSearchScreenBuilder: (context) => SearchScreen(
-              onSearch: (query) => openlibrarySearch(query, context),
-              isLiveSearch: false,
-            ),
-            hintText: 'Type book here...',
-        )
-      ),
-    );
-  }
-}
+//class ManualEntryScreen extends StatelessWidget {const ManualEntryScreen({super.key}); @override
+//  Widget build(BuildContext context) {
+//    return Scaffold(
+//      appBar: AppBar(title: Text("Manual search of desired book."), centerTitle: true,),
+//      body: Padding(
+//        padding: const .all(8.0),
+//        child: MySearchBar(
+//            targetSearchScreenBuilder: (context) => SearchScreen(
+//              onSearch: (query) => openlibrarySearch(query, context),
+//              isLiveSearch: false,
+//            ),
+//            hintText: 'Type book here...',
+//        )
+//      ),
+//    );
+//  }
+//}

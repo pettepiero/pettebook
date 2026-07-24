@@ -1,13 +1,6 @@
 import 'package:flutter/material.dart';
 
 
-class SearchStateData {
-  final bool isLoading;
-  final List<String>? results;
-
-  SearchStateData({this.isLoading = false, this.results});
-}
-
 class SearchScreen extends StatefulWidget {
   final Future<List<String>> Function(String query) onSearch;
   final bool isLiveSearch;
@@ -21,125 +14,142 @@ class SearchScreen extends StatefulWidget {
   State<SearchScreen> createState() => _SearchScreenState();
 }
 
-
 class _SearchScreenState extends State<SearchScreen> {
-  final SearchController _searchController = SearchController();
-  final ValueNotifier<SearchStateData> _searchState = ValueNotifier(SearchStateData());
+  final SearchController _liveSearchController = SearchController();
+  final TextEditingController _submitSearchController = TextEditingController();
 
-  //List<String> _searchResults = [];
-  //bool _isSearching = false;
-  //bool _hasSearched = false;
+  List<String> _searchResults = [];
+  bool _isLoading = false;
+  bool _hasSearched = false;
 
   Future<void> _submitSearch(String query) async {
-    if (widget.isLiveSearch || query.isEmpty) return;
-    _searchState.value = SearchStateData(isLoading: true, results: null);
+    if (query.isEmpty) return;
 
-    if (!_searchController.isOpen) {
-      _searchController.openView();
-    }
+    setState(() {
+      _isLoading = true;
+      _hasSearched = true;
+      _searchResults = [];
+    });
+
     final List<String> results = await widget.onSearch(query);
 
-    _searchState.value = SearchStateData(isLoading: false, results: results);
+    setState(() {
+      _searchResults = results;
+      _isLoading = false;
+    });
   }
 
   @override
   void dispose() {
-    _searchController.dispose();
-    _searchState.dispose();
+    _liveSearchController.dispose();
+    _submitSearchController.dispose();
     super.dispose();
+  }
+
+  Widget _buildLiveSearch() {
+    return Padding(
+      padding: const EdgeInsets.all(8.0),
+      child: SearchAnchor(
+        searchController: _liveSearchController,
+        builder: (BuildContext context, SearchController controller) {
+          return SearchBar(
+            controller: controller,
+            padding: const WidgetStatePropertyAll<EdgeInsets>(
+              EdgeInsets.symmetric(horizontal: 16.0),
+            ),
+            onTap: () => controller.openView(),
+            onChanged: (text) {
+              if (text.isNotEmpty && !controller.isOpen) {
+                controller.openView();
+              }
+            },
+            leading: const Icon(Icons.search),
+          );
+        },
+        suggestionsBuilder: (BuildContext context, SearchController controller) async {
+          final String searchInput = controller.text.toLowerCase();
+          if (searchInput.isEmpty) return [];
+
+          final List<String> results = await widget.onSearch(searchInput);
+
+          if (results.isEmpty) {
+            return [
+              const Padding(
+                padding: EdgeInsets.all(16.0),
+                child: Center(child: Text('No matching books found')),
+              )
+            ];
+          }
+          return results.map((book) {
+            return ListTile(
+              leading: const Icon(Icons.book),
+              title: Text(book),
+              onTap: () {
+                controller.closeView(book);
+              },
+            );
+          }).toList();
+        },
+      )
+    );
+  }
+
+  Widget _buildSubmitOnlySearch() {
+    return Column(
+      children: [
+        Padding(
+          padding: const EdgeInsets.all(8.0),
+          child: SearchBar(
+            controller: _submitSearchController,
+            padding: const WidgetStatePropertyAll<EdgeInsets>(
+              EdgeInsets.symmetric(horizontal: 16.0),
+            ),
+
+            onSubmitted: (text) => _submitSearch(text),
+            leading: const Icon(Icons.search),
+          ),
+        ),
+
+        Expanded(
+          child: _buildResultsBody(),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildResultsBody() {
+    if (_isLoading) {
+      return const Center(child: CircularProgressIndicator());
+    }
+
+    if (!_hasSearched) {
+      return const Center(child: Text('Type a book title and press enter to search.'));
+    }
+
+    if (_searchResults.isEmpty) {
+      return const Center(child: Text('No matching books found.'));
+    }
+
+    return ListView.builder(
+      itemCount: _searchResults.length,
+      itemBuilder: (context, index) {
+        final book = _searchResults[index];
+        return ListTile(
+          leading: const Icon(Icons.book),
+          title: Text(book),
+          onTap: () {
+            debugPrint('Selected: $book');
+          },
+        );
+      },
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: const Text("This is the search result page.")),
-      body: Padding(
-        padding: const EdgeInsets.all(8.0),
-        child: SearchAnchor(
-          searchController: _searchController,
-          viewOnSubmitted: (text) => _submitSearch(text),
-          builder: (BuildContext context, SearchController controller) {
-            return SearchBar(
-              controller: controller,
-              padding: const WidgetStatePropertyAll<EdgeInsets>(
-                EdgeInsets.symmetric(horizontal: 16.0),
-              ),
-              onTap: () {
-                controller.openView();
-              },
-              onChanged: (text) {
-                if (text.isNotEmpty && !controller.isOpen) {
-                  controller.openView();
-                }
-              },
-              onSubmitted: (text) => _submitSearch(text),
-              leading: const Icon(Icons.search),
-            );
-          }, 
-          suggestionsBuilder: (BuildContext context, SearchController controller) async {
-            final String searchInput = controller.text.toLowerCase();
-
-            if (widget.isLiveSearch){
-              final List<String> results = await widget.onSearch(searchInput);
-              // handle empty state
-              if (results.isEmpty) {
-                return [
-                  const Padding(
-                    padding: EdgeInsets.all(16.0),
-                    child: Center(child: Text('No matching books found')),
-                  )
-                ];
-              }
-              // Map results to widgets
-              return results.map((book) {
-                return ListTile(
-                    leading: const Icon(Icons.book),
-                    title: Text(book),
-                    onTap: () => controller.closeView(book),
-                );
-              }).toList();
-            }
-            else {
-
-              return [
-                ValueListenableBuilder<SearchStateData>(
-                  valueListenable: _searchState,
-                  builder: (context, state, _) {
-                    if (state.isLoading) {
-                      return const Padding(
-                        padding: EdgeInsets.all(32.0),
-                        child: Center(child: CircularProgressIndicator()),
-                      );
-                    }
-                    final results = state.results;
-
-                    if (results == null) {
-                      return const SizedBox.shrink();
-                    }
-                    if (results.isEmpty){
-                      return const Padding(
-                        padding: EdgeInsets.all(16.0),
-                        child: Center(child: Text('No matching books found')),
-                      );
-                    }
-
-                    return Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: results.map((book) {
-                        return ListTile(
-                          leading: const Icon(Icons.book),
-                          title: Text(book),
-                          onTap: () => controller.closeView(book),
-                        );
-                      }).toList(),
-                    );
-                  }
-                )
-              ];
-            }
-          },
-        )
-      )
+      body: widget.isLiveSearch ? _buildLiveSearch() : _buildSubmitOnlySearch(),
     );
   }
 }
