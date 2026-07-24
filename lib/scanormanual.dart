@@ -8,6 +8,9 @@ import 'package:pettebook/datafetching.dart';
 List<String> myBooks = ['1984', 'Dune', 'Narnia'];
 
 class ScanOrManualScreen extends StatefulWidget {
+  void debugprinter() {
+    print('Inside scan or manual screen');
+  }
   const ScanOrManualScreen({super.key});
 
   @override
@@ -16,14 +19,18 @@ class ScanOrManualScreen extends StatefulWidget {
 
 class _ScanOrManualScreenState extends State<ScanOrManualScreen> {
   final List<GridItemData> _gridItems = [
-    GridItemData(title: "Scan ISBN", color: Colors.teal[100]!, icon: Icon(Icons.barcode_reader), targetPage: const BarCodeReaderScreen()),
+    GridItemData(
+        title: "Scan ISBN",
+        color: Colors.teal[100]!,
+        icon: Icon(Icons.barcode_reader),
+        targetPage: const BarCodeReaderScreen()
+    ),
     //GridItemData(title: "Manual Entry", color: Colors.teal[200]!, icon: Icon(Icons.search), targetPage: const ManualEntryScreen()),
     GridItemData(
         title: "Manual Entry",
         color: Colors.teal[200]!,
         icon: Icon(Icons.search),
-        targetPage: SearchScreen(
-          onSearch: (query) => localSearch(myBooks, query),
+        targetPage: ManualEntryScreen(
         ),
     ),
   ];
@@ -109,7 +116,7 @@ class ManualEntryScreen extends StatelessWidget {const ManualEntryScreen({super.
         padding: const .all(8.0),
         child: MySearchBar(
             targetSearchScreenBuilder: (context) => SearchScreen(
-              onSearch: (query) => localSearch(myBooks, query),
+              onSearch: (query) => openlibrarySearch(query, context),
             ),
             hintText: 'Type book here...',
         )
