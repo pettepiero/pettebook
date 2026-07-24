@@ -5,6 +5,8 @@ import 'editcatalogscreen.dart';
 import 'settingscreen.dart';
 import 'profilescreen.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:open_library/open_library.dart';
+import 'package:provider/provider.dart';
 
 void main() async{
   WidgetsFlutterBinding.ensureInitialized();
@@ -22,15 +24,19 @@ class MyApp extends StatelessWidget {
   // This widget is the root of your application.
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'HomePage',
-      debugShowCheckedModeBanner: false,
-      theme: ThemeData(
-        colorScheme: .fromSeed(seedColor: Colors.deepPurple),
-        useMaterial3: true,
-        scaffoldBackgroundColor: Colors.black12,
-      ),
-      home: Material3BottomNav(),
+    return Provider(
+      create: (_) => OpenLibrary(),
+      dispose: (_, OpenLibrary service) => service.dispose(),
+      child: MaterialApp(
+        title: 'HomePage',
+        debugShowCheckedModeBanner: false,
+        theme: ThemeData(
+          colorScheme: .fromSeed(seedColor: Colors.deepPurple),
+          useMaterial3: true,
+          scaffoldBackgroundColor: Colors.black12,
+        ),
+        home: Material3BottomNav(),
+      )
     );
   }
 }
