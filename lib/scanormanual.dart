@@ -117,6 +117,7 @@ class ManualEntryScreen extends StatelessWidget {const ManualEntryScreen({super.
         child: MySearchBar(
             targetSearchScreenBuilder: (context) => SearchScreen(
               onSearch: (query) => openlibrarySearch(query, context),
+              isLiveSearch: false,
             ),
             hintText: 'Type book here...',
         )
