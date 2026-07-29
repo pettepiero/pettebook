@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 
 
 class SearchScreen extends StatefulWidget {
-  final Future<List<String>> Function(String query) onSearch;
+  final Future<List<Map<String, dynamic>>> Function(String query) onSearch;
   final bool isLiveSearch;
   const SearchScreen({
     super.key,
@@ -18,7 +18,7 @@ class _SearchScreenState extends State<SearchScreen> {
   final SearchController _liveSearchController = SearchController();
   final TextEditingController _submitSearchController = TextEditingController();
 
-  List<String> _searchResults = [];
+  List<Map<String, dynamic>> _searchResults = [];
   bool _isLoading = false;
   bool _hasSearched = false;
 
@@ -31,7 +31,8 @@ class _SearchScreenState extends State<SearchScreen> {
       _searchResults = [];
     });
 
-    final List<String> results = await widget.onSearch(query);
+    final List<Map<String, dynamic>> results = await widget.onSearch(query);
+    debugPrint("\nIn _SearchScreenState: results: $results");
 
     setState(() {
       _searchResults = results;
@@ -70,7 +71,7 @@ class _SearchScreenState extends State<SearchScreen> {
           final String searchInput = controller.text.toLowerCase();
           if (searchInput.isEmpty) return [];
 
-          final List<String> results = await widget.onSearch(searchInput);
+          final List<Map<String, dynamic>> results = await widget.onSearch(searchInput);
 
           if (results.isEmpty) {
             return [
@@ -83,9 +84,10 @@ class _SearchScreenState extends State<SearchScreen> {
           return results.map((book) {
             return ListTile(
               leading: const Icon(Icons.book),
-              title: Text(book),
+              title: Text(book['title']?.toString() ?? 'Unknown Title'),
+              subtitle: Text(book['authors']?.toString() ?? 'Unknown Author'),
+              dense: true,
               onTap: () {
-                controller.closeView(book);
               },
             );
           }).toList();
@@ -136,7 +138,8 @@ class _SearchScreenState extends State<SearchScreen> {
         final book = _searchResults[index];
         return ListTile(
           leading: const Icon(Icons.book),
-          title: Text(book),
+          title: Text(book['title']?.toString() ?? 'Unknown Title'),
+          subtitle: Text(book['authors']?.toString() ?? 'Unknown Author'),
           onTap: () {
             debugPrint('Selected: $book');
           },

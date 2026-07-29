@@ -106,21 +106,6 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-
-  // LOCAL SEARCH OF BOOKS
-  final List<String> _localBooks = [
-    'The Great Gatsby',
-    '1984',
-    'To Kill a Mockingbird',
-    'The Lord of the Rings',
-    'Pride and Prejudice',
-    'The Hobbit',
-    'Dune',
-    'Harry Potter',
-  ];
-
-
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -131,7 +116,6 @@ class _HomeScreenState extends State<HomeScreen> {
           children: [
             MySearchBar(
                 targetSearchScreenBuilder: (context) => SearchScreen(
-                  //onSearch: (query) => localSearch(_localBooks, query),
                   onSearch: (query) => supabaseSearch(query),
                 ),
                 hintText: "Type to search catalog..."

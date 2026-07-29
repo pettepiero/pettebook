@@ -4,63 +4,77 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:open_library/models/ol_search_model.dart';
 import 'package:provider/provider.dart';
 
-class BookRepository {
-  final List<String> _localCatalog = ["Moby Dick", "1984", "Nexus"];
+//LOCAL SEARCH: needs to be fixed to return Future<List<Map<String, dynamic>>>
 
-  Future<List<String>> searchLocalCatalog(String query) async {
-    await Future.delayed(const Duration(milliseconds: 200));
-    final lowerQuery = query.toLowerCase();
-    return _localCatalog
-        .where((book) => book.toLowerCase().contains(lowerQuery))
-        .toList();
-  }
-
-  //Future<List<String>> searchOnlineApi(String query) async {
-  //  try {
-
-  //  }
-  //}
-}
-
-Future<List<String>> localSearch(List<String> booklist, String query) async {
-  // Optional: Simulate a tiny delay so your SearchScreen can show a loading indicator
-  await Future.delayed(const Duration(milliseconds: 300));
-
-  // If the search bar is empty, return all books (or return an empty list [])
-  if (query.isEmpty) {
-    return booklist;
-  }
-
-  // Convert the query to lowercase for a case-insensitive search
-  final lowerCaseQuery = query.toLowerCase();
-
-  // Filter the list
-  return booklist.where((book) {
-    return book.toLowerCase().contains(lowerCaseQuery);
-  }).toList();
-}
+//Future<List<Map<String, dynamic>>> localSearch(List<String> booklist, String query) async {
+//  // Optional: Simulate a tiny delay so your SearchScreen can show a loading indicator
+//  await Future.delayed(const Duration(milliseconds: 300));
+//
+//  // If the search bar is empty, return all books (or return an empty list [])
+//  if (query.isEmpty) {
+//    return booklist;
+//  }
+//
+//  // Convert the query to lowercase for a case-insensitive search
+//  final lowerCaseQuery = query.toLowerCase();
+//
+//  // Filter the list
+//  return booklist.where((book) {
+//    return book.toLowerCase().contains(lowerCaseQuery);
+//  }).toList();
+//}
 // END OF LOCAL SEARCH OF BOOKS
 
 
-Future<List<String>> supabaseSearch(String query) async {
+Future<List<Map<String, dynamic>>> supabaseSearch(String query) async {
   final supabase = Supabase.instance.client;
-  final result = await supabase
-      .from('book_tab')
-      .select('title')
-      .ilike('title', '%$query%');
 
-  return result.map((row) => row['title'] as String).toList();
+  try {
+    final List<Map<String, dynamic>> result = await supabase
+        .from('book_tab')
+        .select('''
+          title,
+          year,
+          publisher_tab(
+            pub_name
+            ),
+          author_tab (
+            author_f_name,
+            author_l_name
+            )
+        ''')
+        .ilike('title', '%$query%');
+    debugPrint('Supabase Raw Output: $result');
+    final formattedResult = result.map((row){
+      final authorData = row['author_tab'] as Map<String, dynamic>?;
+      final firstName = authorData?['author_f_name'] ?? '';
+      final lastName = authorData?['author_l_name'] ?? '';
+      final pubData = row['publisher_tab'] as Map<String, dynamic>?;
+      final pubName = pubData?['pub_name'] ?? '';
+      final year = row['year'] ?? '';
+
+      return {
+        'title': row['title'],
+        'authors': '$firstName $lastName'.trim(),
+        'year': year,
+        'pub': pubName,
+      };
+    }).toList();
+    debugPrint('Formatted Output: $formattedResult');
+    return formattedResult;
+  } catch (error) {
+    debugPrint('Supabase Search Error: $error');
+    return [];
+  }
 }
 
-Future<List<String>> openlibrarySearch(String query, BuildContext context) async {
+Future<List<Map<String, dynamic>>> openlibrarySearch(String query, BuildContext context) async {
   debugPrint('Called openlibrarySearch function');
   final lowerCaseQuery = query.toLowerCase();
   if (query.isEmpty) {
     return [];
   }
   final openLib = Provider.of<OpenLibrary>(context, listen: false);
-  debugPrint('openLib found: $openLib');
-  debugPrint('query is: $lowerCaseQuery');
 
   try {
     final result = await openLib.query(title: lowerCaseQuery);
@@ -72,7 +86,14 @@ Future<List<String>> openlibrarySearch(String query, BuildContext context) async
        final author = doc.authors.isNotEmpty
            ? doc.authors.map((a) => a.name).join(', ')
            : "Unknown Author";
-       return "$title - $author";
+       final year = doc.publish_year;
+       final pub = doc.publisher;
+       return {
+         'title': title,
+         'authors': author,
+         'year': year,
+         'pub': pub,
+       };
       }).toList();
     }
     debugPrint('result is not OLSearch');
