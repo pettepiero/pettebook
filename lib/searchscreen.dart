@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:pettebook/bookdetailpage.dart';
+import 'package:pettebook/components.dart';
 
 
 class SearchScreen extends StatefulWidget {
@@ -137,8 +138,36 @@ class _SearchScreenState extends State<SearchScreen> {
       itemCount: _searchResults.length,
       itemBuilder: (context, index) {
         final book = _searchResults[index];
+        final coverId = book['cover_id'];
+        final isbn = book['isbn'];
+        String imageUrl = '';
+
+        if (coverId != null && coverId.isNotEmpty){
+          imageUrl = 'https://covers.openlibrary.org/b/id/$coverId-M.jpg';
+        } else if (isbn != null && isbn.isNotEmpty){
+          imageUrl = 'https://covers.openlibrary.org/b/isbn/$isbn-M.jpg';
+        }
+
         return ListTile(
-          leading: const Icon(Icons.book),
+          //leading: const Icon(Icons.book),
+          leading: SizedBox(
+            width: 50,
+            height: 75,
+            child: imageUrl.isNotEmpty
+              ? Image.network(
+                imageUrl,
+                fit: BoxFit.cover,
+                loadingBuilder: (context, child, loadingProgress) {
+                  if (loadingProgress == null) return child;
+                  return const Center(child: CircularProgressIndicator());
+                },
+                errorBuilder: (context, error, StackTrace){
+                  return buildImagePlaceholder();
+                },
+              )
+              : buildImagePlaceholder(),
+
+          ),
           title: Text(book['title']?.toString() ?? 'Unknown Title'),
           subtitle: Text(book['authors']?.toString() ?? 'Unknown Author'),
           onTap: () {
