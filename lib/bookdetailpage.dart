@@ -10,10 +10,16 @@ class ExternalBookDetailScreen extends StatelessWidget {
   Widget build(BuildContext context) {
 
     //Get the image of the book cover here
+    final String? coverId = book['cover_id'];
     final String? isbn = book['isbn'];
-    final String imageUrl = isbn != null && isbn.isNotEmpty
-      ? 'https://covers.openlibrary.org/b/isbn/$isbn-M.jpg'
-      : ''; 
+
+    String imageUrl = '';
+
+    if (coverId != null && coverId.isNotEmpty){
+      imageUrl = 'https://covers.openlibrary.org/b/id/$coverId-M.jpg';
+    } else if (isbn != null && isbn.isNotEmpty){
+      imageUrl = 'https://covers.openlibrary.org/b/isbn/$isbn-M.jpg';
+    }
 
     return Scaffold(
       appBar: AppBar(

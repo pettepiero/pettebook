@@ -106,30 +106,35 @@ Future<List<Map<String, dynamic>>> openlibrarySearch(String query, BuildContext 
     final url = Uri.parse('https://openlibrary.org/search.json?title=${Uri.encodeComponent(query)}&limit=15');
     final response = await http.get(url);
 
+    debugPrint("\n\nresponse: $response\n\n");
+
     if (response.statusCode == 200) {
       final data = json.decode(response.body);
+      debugPrint("\n\ndata: $data\n\n");
       final docs = data['docs'] as List<dynamic>;
+      debugPrint("\n\ndocs: $docs\n\n");
+      debugPrint("\n\ndocs.length: ${docs.length}\n\n");
+      debugPrint("\n\ndocs[1]: ${docs[1]}\n\n");
+      debugPrint("\n\ndocs[2]: ${docs[1]}\n\n");
+      debugPrint("\n\ndocs[3]: ${docs[1]}\n\n");
+      debugPrint("\n\ndocs[4]: ${docs[1]}\n\n");
 
       return docs.map((doc) {
-        // 2. Extract Title
         final title = doc['title']?.toString() ?? 'Unknown Title';
 
-        // 3. Extract Authors (API returns 'author_name' as a list of strings)
         final authorsList = doc['author_name'] as List<dynamic>?;
         final author = (authorsList != null && authorsList.isNotEmpty) 
             ? authorsList.join(', ') 
             : 'Unknown Author';
 
-        // 4. Extract Year (Prefer 'first_publish_year' as it is a single integer)
         final year = doc['first_publish_year']?.toString() ?? '';
 
-        // 5. Extract Publisher (API returns 'publisher' as a list of strings)
         final pubList = doc['publisher'] as List<dynamic>?;
         final pub = (pubList != null && pubList.isNotEmpty) ? pubList.first.toString() : '';
 
-        // 6. Extract ISBN (API returns 'isbn' as a list of strings)
         final isbnList = doc['isbn'] as List<dynamic>?;
         final isbn = (isbnList != null && isbnList.isNotEmpty) ? isbnList.first.toString() : '';
+        final coverId = doc['cover_i']?.toString() ?? '';
 
         return {
           'title': title,
@@ -137,6 +142,7 @@ Future<List<Map<String, dynamic>>> openlibrarySearch(String query, BuildContext 
           'year': year,
           'pub': pub,
           'isbn': isbn,
+          'cover_id': coverId,
         };
       }).toList();
     }
