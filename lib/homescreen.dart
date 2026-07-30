@@ -72,10 +72,10 @@ class _HomeScreenState extends State<HomeScreen> {
                     return const Center(child: CircularProgressIndicator());
                   },
                   errorBuilder: (context, error, stackTrace) {
-                    return _buildImagePlaceholder();
+                    return buildImagePlaceholder();
                   },
                 )
-              : _buildImagePlaceholder(),
+              : buildImagePlaceholder(),
             ),
 
           ),
@@ -95,14 +95,6 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
         ],
       ),
-    );
-  }
-
-  Widget _buildImagePlaceholder() {
-    return Container(
-      width: double.infinity,
-      color: Colors.deepPurple.shade50,
-      child: const Icon(Icons.book, size: 48, color: Colors.deepPurple)
     );
   }
 

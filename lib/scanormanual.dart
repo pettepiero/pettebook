@@ -17,11 +17,10 @@ class ScanOrManualScreen extends StatefulWidget {
 }
 
 class _ScanOrManualScreenState extends State<ScanOrManualScreen> {
-
   @override
   Widget build(BuildContext context) {
 
-    final List<GridItemData> _gridItems = [
+    final List<GridItemData> gridItems = [
       GridItemData(
           title: "Scan ISBN",
           color: Colors.teal[100]!,
@@ -52,9 +51,9 @@ class _ScanOrManualScreenState extends State<ScanOrManualScreen> {
                   crossAxisSpacing: 10,
                   mainAxisSpacing: 10,
                 ),
-                itemCount: _gridItems.length,
+                itemCount: gridItems.length,
                 itemBuilder: (context, index) {
-                  final item = _gridItems[index];
+                  final item = gridItems[index];
 
                   return InkWell(
                     onTap: () {

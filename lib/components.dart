@@ -28,3 +28,11 @@ class MySearchBar extends StatelessWidget{
     );
   }
 }
+
+Widget buildImagePlaceholder() {
+  return Container(
+    width: double.infinity,
+    color: Colors.deepPurple.shade50,
+    child: const Icon(Icons.book, size: 48, color: Colors.deepPurple)
+  );
+}

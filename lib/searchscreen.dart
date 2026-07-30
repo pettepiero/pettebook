@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:pettebook/bookdetailpage.dart';
 
 
 class SearchScreen extends StatefulWidget {
@@ -142,6 +143,12 @@ class _SearchScreenState extends State<SearchScreen> {
           subtitle: Text(book['authors']?.toString() ?? 'Unknown Author'),
           onTap: () {
             debugPrint('Selected: $book');
+            Navigator.push(
+                context,
+                MaterialPageRoute(
+                    builder: (context) => ExternalBookDetailScreen(book: book)
+                ),
+            );
           },
         );
       },

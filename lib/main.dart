@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'homescreen.dart';
-import 'searchscreen.dart';
 import 'editcatalogscreen.dart';
 import 'settingscreen.dart';
 import 'profilescreen.dart';
