@@ -57,44 +57,6 @@ Future<List<Map<String, dynamic>>> supabaseSearch(String query) async {
   }
 }
 
-//Future<List<Map<String, dynamic>>> openlibrarySearch(String query, BuildContext context) async {
-//  debugPrint('Called openlibrarySearch function');
-//  final lowerCaseQuery = query.toLowerCase();
-//  if (query.isEmpty) {
-//    return [];
-//  }
-//  final openLib = Provider.of<OpenLibrary>(context, listen: false);
-//
-//  try {
-//    final result = await openLib.query(title: lowerCaseQuery);
-//    if (result is OLSearch) {
-//      debugPrint('Found results: $result');
-//      return result.docs.map((doc) {
-//       final title = doc.title ;
-//       //final author = doc.authors ?? "Unknown Author";
-//       final author = doc.authors.isNotEmpty
-//           ? doc.authors.map((a) => a.name).join(', ')
-//           : "Unknown Author";
-//       final year = doc.publish_year.isNotEmpty ? doc.publish_year.first.toString() : '';
-//       final pub = doc.publisher.isNotEmpty ? doc.publisher.first.toString() : '';
-//       final isbn = doc.isbn.isNotEmpty ? doc.isbn.first.toString() : '';
-//       return {
-//          'title': title,
-//          'authors': author,
-//          'year': year,
-//          'pub': pub,
-//          'isbn': isbn,
-//       };
-//      }).toList();
-//    }
-//    debugPrint('result is not OLSearch');
-//    return [];
-//  } catch (error) {
-//    debugPrint('OpenLibrary Search failed: $error');
-//    return [];
-//  }
-//}
-
 
 Future<List<Map<String, dynamic>>> openlibrarySearch(String query, BuildContext context) async {
   debugPrint('Called direct HTTP openlibrarySearch function');
@@ -110,14 +72,7 @@ Future<List<Map<String, dynamic>>> openlibrarySearch(String query, BuildContext 
 
     if (response.statusCode == 200) {
       final data = json.decode(response.body);
-      debugPrint("\n\ndata: $data\n\n");
       final docs = data['docs'] as List<dynamic>;
-      debugPrint("\n\ndocs: $docs\n\n");
-      debugPrint("\n\ndocs.length: ${docs.length}\n\n");
-      debugPrint("\n\ndocs[1]: ${docs[1]}\n\n");
-      debugPrint("\n\ndocs[2]: ${docs[1]}\n\n");
-      debugPrint("\n\ndocs[3]: ${docs[1]}\n\n");
-      debugPrint("\n\ndocs[4]: ${docs[1]}\n\n");
 
       return docs.map((doc) {
         final title = doc['title']?.toString() ?? 'Unknown Title';
@@ -135,6 +90,7 @@ Future<List<Map<String, dynamic>>> openlibrarySearch(String query, BuildContext 
         final isbnList = doc['isbn'] as List<dynamic>?;
         final isbn = (isbnList != null && isbnList.isNotEmpty) ? isbnList.first.toString() : '';
         final coverId = doc['cover_i']?.toString() ?? '';
+        final workKey = doc['key']?.toString() ?? '';
 
         return {
           'title': title,
@@ -143,6 +99,7 @@ Future<List<Map<String, dynamic>>> openlibrarySearch(String query, BuildContext 
           'pub': pub,
           'isbn': isbn,
           'cover_id': coverId,
+          'workKey': workKey,
         };
       }).toList();
     }
@@ -150,6 +107,56 @@ Future<List<Map<String, dynamic>>> openlibrarySearch(String query, BuildContext 
     return [];
   } catch (error) {
     debugPrint('OpenLibrary HTTP Search failed: $error');
+    return [];
+  }
+}
+
+Future<List<Map<String, dynamic>>> fetchEditionsFromWork(String workKey) async {
+  if (workKey.isEmpty) return [];
+
+  debugPrint('Fetching editions for work: $workKey');
+  try {
+    final url = Uri.parse('https://openlibrary.org$workKey/editions.json');
+    final response = await http.get(url);
+
+    if (response.statusCode == 200){
+      final data = json.decode(response.body);
+      final entries = data['entries'] as List<dynamic>? ?? [];
+
+      return entries.map((edition) {
+        final title = edition['title']?.toString() ?? 'Unknown Title';
+        final date = edition['publish_date']?.toString() ?? 'Unknown Date';
+
+        final publishers = edition['publishers'] as List<dynamic>?;
+        final publisher = publishers != null && publishers.isNotEmpty
+            ? publishers.first.toString() : 'Unknown Publisher';
+
+        final isbn13List = edition['isbn_13'] as List<dynamic>?;
+        final isbn10List = edition['isbn_10'] as List<dynamic>?;
+
+        String editionIsbn = '';
+        if (isbn13List != null && isbn13List.isNotEmpty) {
+          editionIsbn = isbn13List.first.toString();
+        } else if (isbn10List != null && isbn10List.isNotEmpty){
+          editionIsbn = isbn10List.first.toString();
+        }
+
+        final covers = edition['covers'] as List<dynamic>?;
+        final coverId = covers != null && covers.isNotEmpty
+          ? covers.first.toString() : '';
+
+        return {
+          'title': title,
+          'yaer': date,
+          'pub': publisher,
+          'isbn': editionIsbn,
+          'cover_id': coverId,
+        };
+      }).toList();
+    }
+    return [];
+  } catch (error) {
+    debugPrint("Failed to fetch editions: $error");
     return [];
   }
 }

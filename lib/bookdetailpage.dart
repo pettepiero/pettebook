@@ -1,5 +1,33 @@
 import 'package:flutter/material.dart';
 import 'package:pettebook/components.dart';
+import 'package:pettebook/datafetching.dart';
+
+Widget getCover({required Map<String, dynamic> book}){
+//Image getCover(Map<String, dynamic> book) {
+  final String? coverId = book['cover_id'];
+  final String? isbn = book['isbn'];
+  String imageUrl = '';
+  if (coverId != null && coverId.isNotEmpty){
+    imageUrl = 'https://covers.openlibrary.org/b/id/$coverId-M.jpg';
+  } else if (isbn != null && isbn.isNotEmpty){
+    imageUrl = 'https://covers.openlibrary.org/b/isbn/$isbn-M.jpg';
+  }
+
+  if (imageUrl.isNotEmpty) {
+    return Image.network(
+      imageUrl,
+      fit: BoxFit.cover,
+      loadingBuilder: (context, child, loadingProgress) {
+        if (loadingProgress == null) return child;
+        return const Center(child: CircularProgressIndicator());
+      },
+      errorBuilder: (context, error, StackTrace){
+        return buildImagePlaceholder();
+      },
+    );
+  }
+  return buildImagePlaceholder();
+}
 
 class ExternalBookDetailScreen extends StatelessWidget {
   final Map<String, dynamic> book;
@@ -12,14 +40,18 @@ class ExternalBookDetailScreen extends StatelessWidget {
     //Get the image of the book cover here
     final String? coverId = book['cover_id'];
     final String? isbn = book['isbn'];
+    final String workKey = book['workKey'];
 
-    String imageUrl = '';
+    final Future<List<Map<String, dynamic>>> isbn_list = fetchEditionsFromWork(workKey);
 
-    if (coverId != null && coverId.isNotEmpty){
-      imageUrl = 'https://covers.openlibrary.org/b/id/$coverId-M.jpg';
-    } else if (isbn != null && isbn.isNotEmpty){
-      imageUrl = 'https://covers.openlibrary.org/b/isbn/$isbn-M.jpg';
-    }
+    //String imageUrl = '';
+
+    //if (coverId != null && coverId.isNotEmpty){
+    //  imageUrl = 'https://covers.openlibrary.org/b/id/$coverId-M.jpg';
+    //} else if (isbn != null && isbn.isNotEmpty){
+    //  imageUrl = 'https://covers.openlibrary.org/b/isbn/$isbn-M.jpg';
+    //}
+    Widget cover = getCover(book: book);
 
     return Scaffold(
       appBar: AppBar(
@@ -36,19 +68,7 @@ class ExternalBookDetailScreen extends StatelessWidget {
                 children: [
                   Expanded(
                     flex: 4, 
-                    child: imageUrl.isNotEmpty
-                      ? Image.network(
-                        imageUrl,
-                        fit: BoxFit.cover,
-                        loadingBuilder: (context, child, loadingProgress) {
-                          if (loadingProgress == null) return child;
-                          return const Center(child: CircularProgressIndicator());
-                        },
-                        errorBuilder: (context, error, StackTrace){
-                          return buildImagePlaceholder();
-                        },
-                      )
-                      : buildImagePlaceholder(),
+                    child: cover,
                   ),
                   const SizedBox(width: 16,), // spacing between image and text
 
@@ -84,8 +104,65 @@ class ExternalBookDetailScreen extends StatelessWidget {
                     ),
                   )
                 ],
+              ),
+            ),
+          ),
+
+          const Divider(thickness: 2),
+          const Padding(
+              padding: EdgeInsets.symmetric(vertical: 8.0),
+              child: Text(
+                "Available Editions",
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              ),
+          ),
+
+          Expanded(
+              child: workKey.isEmpty
+                  ? const Center(child: Text("No edition data available for this work."))
+                  : FutureBuilder<List<Map<String, dynamic>>>(
+                future: isbn_list,
+                builder: (context, snapshot) {
+                  if (snapshot.connectionState == ConnectionState.waiting) {
+                    return const Center(child: CircularProgressIndicator());
+                  }
+                  if (snapshot.hasError) {
+                    return Center(child: Text("Error loading editions: ${snapshot.error}"));
+                  }
+                  if (!snapshot.hasData || snapshot.data!.isEmpty) {
+                    return const Center(child: Text("No other editions found."));
+                  }
+                  final editions = snapshot.data;
+
+                  return ListView.builder(
+                    itemCount: editions!.length, //already checked it has data
+                    itemBuilder: (context, index) {
+                      final edition = editions[index];
+                      final editionIsbn = edition['isbn']?.toString() ?? '';
+                      final editionPub = edition['pub']?.toString() ?? 'Unknown Publisher';
+                      final editionYear = edition['year']?.toString() ?? 'Unknown Year';
+                      final displayIsbn = editionIsbn.isNotEmpty ? editionIsbn : "No ISBN provided";
+                      
+                      Widget cover = getCover(book: edition);
+
+                      return ListTile(
+                        //leading: const Icon(Icons.library_books),
+                        leading: SizedBox(
+                          width: 20,
+                          height: 30,
+                          child: cover,
+                        ),
+                        title: Text("ISBN: $displayIsbn"),
+                        subtitle: Text("$editionPub ($editionYear)"),
+                        onTap: () {
+                          debugPrint("Selected edition ISBN: $editionIsbn");
+                        },
+                      );
+                    },
+
+                  );
+                },
               )
-            )
           )
         ],
       )
