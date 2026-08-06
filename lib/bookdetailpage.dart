@@ -42,7 +42,7 @@ class ExternalBookDetailScreen extends StatelessWidget {
     final String? isbn = book['isbn'];
     final String workKey = book['workKey'];
 
-    final Future<List<Map<String, dynamic>>> isbn_list = fetchEditionsFromWork(workKey);
+    final Future<List<Map<String, dynamic>>> isbnList = fetchEditionsFromWork(workKey);
 
     //String imageUrl = '';
 
@@ -121,7 +121,7 @@ class ExternalBookDetailScreen extends StatelessWidget {
               child: workKey.isEmpty
                   ? const Center(child: Text("No edition data available for this work."))
                   : FutureBuilder<List<Map<String, dynamic>>>(
-                future: isbn_list,
+                future: isbnList,
                 builder: (context, snapshot) {
                   if (snapshot.connectionState == ConnectionState.waiting) {
                     return const Center(child: CircularProgressIndicator());
@@ -164,6 +164,85 @@ class ExternalBookDetailScreen extends StatelessWidget {
                 },
               )
           )
+        ],
+      )
+    );
+  }
+}
+
+class InternalBookDetailScreen extends StatelessWidget {
+  final Map<String, dynamic> book;
+
+  const InternalBookDetailScreen({super.key, required this.book});
+
+  @override
+  Widget build(BuildContext context) {
+
+    //Get the image of the book cover here
+    final String? coverId = book['cover_id'];
+    final String? isbn = book['isbn'];
+
+    //final String workKey = book['workKey'];
+
+    Widget cover = getCover(book: book);
+
+    return Scaffold(
+      appBar: AppBar(
+        title: Text("Book Page"),
+      ),
+      body: Column(
+        children: [
+          SizedBox(
+            height: MediaQuery.of(context).size.height*0.45,
+            child: Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Expanded(
+                    flex: 4, 
+                    child: cover,
+                  ),
+                  const SizedBox(width: 16,), // spacing between image and text
+
+                  Expanded(
+                    flex: 6,
+                    child: SingleChildScrollView(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            book['title']?.toString() ?? "Unknown Title",
+                            style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold)
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            book['authors']?.toString() ?? "Unknown Author",
+                            style: const TextStyle(fontSize: 16, fontStyle: FontStyle.italic),
+                          ),
+                          const SizedBox(height: 12),
+                          Text(
+                            "Year: ${book['year']?.toString() ?? "Unknown Year"}"
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            "Publisher: ${book['pub']?.toString() ?? "Unknown Publisher"}"
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            "ISBN: ${book['isbn']?.toString() ?? "Unknown ISBN"}"
+                          ),
+                          Text(
+                            "Location: ${book['location']?.toString() ?? "Unknown Location"}"
+                          ),
+                        ],
+                      )
+                    ),
+                  )
+                ],
+              ),
+            ),
+          ),
         ],
       )
     );

@@ -84,12 +84,25 @@ class _SearchScreenState extends State<SearchScreen> {
             ];
           }
           return results.map((book) {
+            Widget cover = getCover(book: book);
             return ListTile(
-              leading: const Icon(Icons.book),
+              //leading: const Icon(Icons.book),
+              leading: SizedBox(
+                width: 20,
+                height: 30,
+                child: cover,
+              ),
               title: Text(book['title']?.toString() ?? 'Unknown Title'),
               subtitle: Text(book['authors']?.toString() ?? 'Unknown Author'),
               dense: true,
               onTap: () {
+                debugPrint('Selected: $book');
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                      builder: (context) => InternalBookDetailScreen(book: book)
+                  ),
+                );
               },
             );
           }).toList();
