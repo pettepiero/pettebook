@@ -21,7 +21,7 @@ Widget getCover({required Map<String, dynamic> book}){
         if (loadingProgress == null) return child;
         return const Center(child: CircularProgressIndicator());
       },
-      errorBuilder: (context, error, StackTrace){
+      errorBuilder: (context, error, stackTrace){
         return buildImagePlaceholder();
       },
     );
@@ -38,8 +38,8 @@ class ExternalBookDetailScreen extends StatelessWidget {
   Widget build(BuildContext context) {
 
     //Get the image of the book cover here
-    final String? coverId = book['cover_id'];
-    final String? isbn = book['isbn'];
+    //final String? coverId = book['cover_id'];
+    //final String? isbn = book['isbn'];
     final String workKey = book['workKey'];
 
     final Future<List<Map<String, dynamic>>> isbnList = fetchEditionsFromWork(workKey);
@@ -154,9 +154,15 @@ class ExternalBookDetailScreen extends StatelessWidget {
                         ),
                         title: Text("ISBN: $displayIsbn"),
                         subtitle: Text("$editionPub ($editionYear)"),
-                        onTap: () {
-                          debugPrint("Selected edition ISBN: $editionIsbn");
-                        },
+                        trailing: TextButton(
+                            style: ButtonStyle(
+                              foregroundColor: WidgetStatePropertyAll<Color?>(Colors.lightBlue),
+                              ),
+                            child: const Text("Add to library"),
+                            onPressed: () async {
+                              addToLibrary(book);
+                            }
+                        ),
                       );
                     },
 
@@ -179,8 +185,8 @@ class InternalBookDetailScreen extends StatelessWidget {
   Widget build(BuildContext context) {
 
     //Get the image of the book cover here
-    final String? coverId = book['cover_id'];
-    final String? isbn = book['isbn'];
+    //final String? coverId = book['cover_id'];
+    //final String? isbn = book['isbn'];
 
     //final String workKey = book['workKey'];
 

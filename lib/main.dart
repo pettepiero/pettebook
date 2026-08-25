@@ -6,6 +6,7 @@ import 'profilescreen.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:open_library/open_library.dart';
 import 'package:provider/provider.dart';
+import 'auth_gate.dart';
 
 void main() async{
   WidgetsFlutterBinding.ensureInitialized();
@@ -34,7 +35,7 @@ class MyApp extends StatelessWidget {
           useMaterial3: true,
           scaffoldBackgroundColor: Colors.black12,
         ),
-        home: Material3BottomNav(),
+        home: const AuthGate(),
       )
     );
   }

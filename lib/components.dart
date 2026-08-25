@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 
 // Search Bar
@@ -35,4 +36,16 @@ Widget buildImagePlaceholder() {
     color: Colors.deepPurple.shade50,
     child: const Icon(Icons.book, size: 48, color: Colors.deepPurple)
   );
+}
+
+Future<bool> addToLibrary(Map<String, dynamic> book) async {
+  try {
+    final supabase = Supabase.instance.client;
+    await supabase.from('books').insert(book);
+
+    return true;
+  } catch (e) {
+    print("Error adding book: $e");
+    return false;
+  }
 }
