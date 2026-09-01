@@ -30,10 +30,11 @@ class MyApp extends StatelessWidget {
       child: MaterialApp(
         title: 'HomePage',
         debugShowCheckedModeBanner: false,
+        themeMode: ThemeMode.light,
         theme: ThemeData(
           colorScheme: .fromSeed(seedColor: Colors.deepPurple),
+          brightness: Brightness.light,
           useMaterial3: true,
-          scaffoldBackgroundColor: Colors.black12,
         ),
         home: const AuthGate(),
       )
