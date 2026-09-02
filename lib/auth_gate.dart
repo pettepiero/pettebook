@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:pettebook/homescreen.dart';
+import 'package:pettebook/main.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'auth_screen.dart';
 import 'homescreen.dart';
@@ -21,7 +22,7 @@ class AuthGate extends StatelessWidget {
         final session = snapshot.data?.session;
 
         if (session != null) {
-          return const HomeScreen();
+          return const Material3BottomNav();
         } else {
           return const AuthScreen();
         }
