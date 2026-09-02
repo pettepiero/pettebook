@@ -4,6 +4,7 @@ import 'package:pettebook/components.dart';
 import 'package:pettebook/searchscreen.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:pettebook/datafetching.dart';
+import 'package:pettebook/theme.dart';
 
 class HomeScreen extends StatefulWidget{
   const HomeScreen({super.key});

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:pettebook/camerascreen.dart';
 import 'package:pettebook/editcatalogscreen.dart';
 import 'package:pettebook/searchscreen.dart';
 import 'package:pettebook/datafetching.dart';
@@ -25,7 +26,7 @@ class _ScanOrManualScreenState extends State<ScanOrManualScreen> {
           title: "Scan ISBN",
           color: Colors.teal[100]!,
           icon: Icon(Icons.barcode_reader),
-          targetPage: const BarCodeReaderScreen()
+          targetPage: const CameraScreen()
       ),
       GridItemData(
         title: "Manual Entry",
