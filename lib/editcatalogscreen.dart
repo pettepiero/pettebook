@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'rearrangeshelvesscreen.dart';
 import 'scanormanual.dart';
 
 class EditCatalogScreen extends StatefulWidget {
@@ -97,5 +98,4 @@ class GridItemData {
 
 class AddBooksPage extends StatelessWidget {const AddBooksPage({super.key}); @override Widget build(BuildContext context) => Scaffold(appBar: AppBar(title: const Text("Add Books")),);}
 class RemoveBooksPage extends StatelessWidget {const RemoveBooksPage({super.key}); @override Widget build(BuildContext context) => Scaffold(appBar: AppBar(title: const Text("Remove Books")),);}
-class RearrangeShelvesPage extends StatelessWidget {const RearrangeShelvesPage({super.key}); @override Widget build(BuildContext context) => Scaffold(appBar: AppBar(title: const Text("Rearrange Shelves")),);}
 class EditBooksPage extends StatelessWidget {const EditBooksPage({super.key}); @override Widget build(BuildContext context) => Scaffold(appBar: AppBar(title: const Text("Edit Books")),);}
