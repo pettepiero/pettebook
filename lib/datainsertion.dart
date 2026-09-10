@@ -6,10 +6,15 @@ import 'package:http/http.dart' as http;
 
 
 /// The outermost layer of the methods that allow adding a book to the database.
-Future<bool> bookAdder(Map<String, dynamic> book, int shelf_id, int user_id) async {
+Future<bool> bookAdder({
+  required Map<String, dynamic> book, 
+  required int shelfId, 
+  required int householdId, 
+  required String userId
+  }) async {
   // First, check if ISBN is present
   if (book['isbn'] != null) {
-    return addFromISBN(book, shelf_id, user_id);
+    return addFromISBN(book, shelfId, userId);
   } else {
     Map<String, dynamic> bookInfo = await getMissingInfo(book);
     return manualInsertion(bookInfo);
@@ -24,7 +29,7 @@ Future<bool> bookAdder(Map<String, dynamic> book, int shelf_id, int user_id) asy
 ///
 /// If it doesn't find the ISBN code from OL catalog, it asks the user to insert
 /// the entry manually using manualInsertion method.
-Future<bool> addFromISBN(Map<String, dynamic> book, int shelf_id, int user_id) async {
+Future<bool> addFromISBN(Map<String, dynamic> book, int shelfId, String userId) async {
   // Check if ISBN is already present in the database.
   String isbn = book['isbn'];
   final isPresent = await isPresentISBN(isbn);
@@ -50,9 +55,9 @@ Future<bool> addFromISBN(Map<String, dynamic> book, int shelf_id, int user_id) a
         Map<String, dynamic> entryData = olBookDataExtractor(candidate);
 
         // Add the last missing data for insertion:
-        // shelf_id, user_id, household_id
-        entryData['shelf_id'] = shelf_id;
-        entryData['user_id'] = user_id;
+        // shelfId, userId, household_id
+        entryData['shelfId'] = shelfId;
+        entryData['userId'] = userId;
         
       }
     } catch (error) {

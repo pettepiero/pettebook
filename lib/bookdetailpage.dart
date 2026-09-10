@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:pettebook/components.dart';
 import 'package:pettebook/datafetching.dart';
+import 'package:pettebook/datainsertion.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 Widget getCover({required Map<String, dynamic> book}){
 //Image getCover(Map<String, dynamic> book) {
@@ -160,7 +162,27 @@ class ExternalBookDetailScreen extends StatelessWidget {
                               ),
                             child: const Text("Add to library"),
                             onPressed: () async {
-                              addToLibrary(book);
+                              final String? userId = Supabase.instance.client.auth.currentUser?.id;
+                              if (userId == null) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(content: Text("Please log in to add books.")),
+                                 );
+                                return;
+                              }
+
+                              showModalBottomSheet(
+                                context: context, 
+                                isScrollControlled: true,
+                                shape: const RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+                                ),
+                                builder: (context) {
+                                  return ShelfSelectionSheet(
+                                    book: edition, 
+                                    userId: userId
+                                  );
+                                }
+                              );
                             }
                         ),
                       );
@@ -251,6 +273,92 @@ class InternalBookDetailScreen extends StatelessWidget {
           ),
         ],
       )
+    );
+  }
+}
+
+
+/// Allows a user to decide which shelf a book will go to when
+/// he tries to add it to its library.
+class ShelfSelectionSheet extends StatelessWidget {
+  final Map<String, dynamic> book;
+  final String userId;
+
+  const ShelfSelectionSheet({super.key, required this.book, required this.userId});
+
+  Future<List<Map<String, dynamic>>> _fetchUserShelves() async {
+    final supabase = Supabase.instance.client;
+    
+    // RLS automatically filters this to only show shelves in the user's households
+    final response = await supabase
+        .from('bookshelf_tab') 
+        .select('shelf_id, shelf_name, household_id'); 
+        
+    return List<Map<String, dynamic>>.from(response);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(16.0),
+      child: SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min, 
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              "Select a Shelf",
+              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 16),
+            FutureBuilder<List<Map<String, dynamic>>>(
+              future: _fetchUserShelves(),
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return const Center(child: CircularProgressIndicator());
+                }
+                if (snapshot.hasError) {
+                  return Text("Error loading shelves: ${snapshot.error}");
+                }
+                
+                final shelves = snapshot.data;
+                if (shelves == null || shelves.isEmpty) {
+                  return const Text("No shelves found. Create one in a room first!");
+                }
+
+                return ListView.builder(
+                  shrinkWrap: true, 
+                  itemCount: shelves.length,
+                  itemBuilder: (context, index) {
+                    final shelf = shelves[index];
+                    return ListTile(
+                      leading: const Icon(Icons.library_books), // Replaced invalid Icons.shelves
+                      title: Text(shelf['shelf_name'].toString()),
+                      onTap: () async {
+                        // 1. Close the bottom sheet
+                        Navigator.pop(context);
+                        
+                        // 2. Add the book to the selected shelf
+                        await bookAdder(
+                          book: book, 
+                          shelfId: shelf['shelf_id'], 
+                          householdId: shelf['household_id'],
+                          userId: userId
+                        );
+                        
+                        // 3. Show a success message
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(content: Text('Added to ${shelf['shelf_name']}')),
+                        );
+                      },
+                    );
+                  },
+                );
+              },
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

@@ -5,6 +5,7 @@ import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:flutter/material.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:pettebook/theme.dart';
+import 'package:flutter/widget_previews.dart';
 
 class CameraScreen extends StatefulWidget {
   const CameraScreen({super.key});
@@ -14,9 +15,8 @@ class CameraScreen extends StatefulWidget {
 }
 
 class _CameraScreenState extends State<CameraScreen> {
-  String? lastScan;
-  String? thisScan;
-  static bool isScanning = false;
+  List<String> scannedIsbns = [];
+  bool isLookingForCode = false;
 
   MobileScannerController controller = MobileScannerController(
     facing: CameraFacing.back,
@@ -62,11 +62,12 @@ class _CameraScreenState extends State<CameraScreen> {
       case 'unsupported':
         return _buildUnsupported();
       case 'loading':
-        default:
-          return Scaffold(backgroundColor: AppTheme.backgroundColour);
+      default:
+        return Scaffold(backgroundColor: AppTheme.backgroundColour);
     }
   }
   
+  @Preview(name: "Camera screen widget")
   Widget _buildSuccessful() {
     return Scaffold(
       backgroundColor: AppTheme.backgroundColour,
@@ -75,31 +76,33 @@ class _CameraScreenState extends State<CameraScreen> {
         elevation: 0,
         leading: IconButton(
           onPressed: () {
-            Navigator.pop(context);
+            Navigator.pop(context, scannedIsbns);
           }, 
           icon: const Icon(Icons.arrow_back)
         ),
+        title: Text("Scanned: ${scannedIsbns.length}", style: AppTheme.h2),
+        centerTitle: true,
       ),
       body: Padding(
         padding: const EdgeInsets.fromLTRB(36, 80, 36, 80),
-        child: Align(
-          alignment: Alignment.center,
-          child: Column(
-            children: [
-              Expanded(
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(10),
+        child: Column(
+          children: [
+            Expanded(
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(10),
+                child: Container(
+                  decoration: BoxDecoration(
+                    border: Border.all(
+                      color: isLookingForCode ? Colors.green : Colors.transparent,
+                      width: 4
+                    ),
+                  ),
                   child: MobileScanner(
                     fit: BoxFit.cover,
                     controller: controller,
+                    tapToFocus: true,
                     onDetect: (capture) {
-                      if (isScanning) {
-                        return;
-                      }
-                      if (kDebugMode) {
-                        print("Scanning");
-                      }
-                      isScanning = true;
+                      if (!isLookingForCode) return;
 
                       final List<Barcode> barcodes = capture.barcodes;
                       for (final barcode in barcodes) {
@@ -108,24 +111,36 @@ class _CameraScreenState extends State<CameraScreen> {
                         if (isbn != null && 
                         (isbn.length == 10 || isbn.length == 13) && 
                         isbnCheck.isValidIsbnFormat(isbn)) {
+                          setState(() {
+                            isLookingForCode = false;  
+                          });
+
                           debugPrint("Valid isbn:");
                           debugPrint(isbn);
-                          return;
+
+                          _showConfirmationDialog(isbn);
+
+                          break;
                         } 
                       }
                     },
                   ),
                 ),
               ),
-              Padding(
-                padding: const EdgeInsets.fromLTRB(0, 8, 0, 0),
-                child: Text(
-                  "Scan an ISBN Barcode",
-                  style: AppTheme.h2,
-                ),
-              )
-            ]
-          )
+            ),
+            const SizedBox(height: 20),
+            SizedBox(
+              width: double.infinity,
+              height: 50,
+              child: OutlinedButton.icon(
+                icon: const Icon(Icons.check_circle_outline),
+                label: const Text("Finish & Return List", style: TextStyle(fontSize: 16)),
+                onPressed: () {
+                  Navigator.pop(context, scannedIsbns);
+                }, 
+              ),
+            )
+          ]
         )
       )
     );
@@ -167,6 +182,7 @@ class _CameraScreenState extends State<CameraScreen> {
       )
     );
   }
+
   Widget _buildUnsupported() {
     return Scaffold(
       backgroundColor: AppTheme.backgroundColour,
@@ -202,6 +218,46 @@ class _CameraScreenState extends State<CameraScreen> {
           ],
         ),
       ),
+    );
+  }
+
+  void _showConfirmationDialog(String isbn) {
+    showDialog(
+      context: context, 
+      barrierDismissible: false,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          backgroundColor: AppTheme.backgroundColour,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(15),
+          ),
+          title: Text("ISBN Detected", style: AppTheme.h2, textAlign: TextAlign.center),
+          content: Text(
+            "ISBN: $isbn\n\nAdd this code to your list?",
+            style: AppTheme.dialogContentStyle,
+            textAlign: TextAlign.center
+          ),
+          actionsAlignment: MainAxisAlignment.spaceEvenly,
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.pop(context);
+              }, 
+              //child: const Text("Discard", style: TextStyle(color: AppTheme.altPrimColour)),
+              child: const Text("Discard"),
+            ),
+            TextButton(
+              onPressed: () {
+                setState(() {
+                  scannedIsbns.add(isbn);
+                });
+                Navigator.pop(context);
+              }, 
+              child: const Text("Add to List"),
+            )
+          ],
+        );
+      } ,
     );
   }
 }
