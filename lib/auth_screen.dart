@@ -37,7 +37,7 @@ class _AuthScreenState extends State<AuthScreen> {
 
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Sign up successful! Please log in.')),
+            const SnackBar(content: Text('Sign up successful! Please confirm you email and log in.')),
           );
           setState(() => _isSignUp = false);
         }
