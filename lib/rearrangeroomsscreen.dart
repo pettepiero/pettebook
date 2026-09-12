@@ -1,14 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'roomshelvesscreen.dart';
 
-class RearrangeShelvesPage extends StatefulWidget {
-  const RearrangeShelvesPage({super.key});
+class RearrangeRoomsPage extends StatefulWidget {
+  const RearrangeRoomsPage({super.key});
 
   @override
-  State<RearrangeShelvesPage> createState() => _RearrangeShelvesPageState();
+  State<RearrangeRoomsPage> createState() => _RearrangeRoomsPageState();
 }
 
-class _RearrangeShelvesPageState extends State<RearrangeShelvesPage> {
+class _RearrangeRoomsPageState extends State<RearrangeRoomsPage> {
   late Future<List<Map<String, dynamic>>> _roomsFuture;
 
   @override
@@ -21,7 +22,7 @@ class _RearrangeShelvesPageState extends State<RearrangeShelvesPage> {
     final supabase = Supabase.instance.client;
     final response = await supabase
         .from('room_tab')
-        .select('room_id, room_name')
+        .select('room_id, room_name, household_id')
         .order('room_name', ascending: true);
 
     return List<Map<String, dynamic>>.from(response);
@@ -149,7 +150,7 @@ class _RearrangeShelvesPageState extends State<RearrangeShelvesPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text("Rearrange Shelves")),
+      appBar: AppBar(title: const Text("Select the room to modify")),
       body: FutureBuilder<List<Map<String, dynamic>>>(
         future: _roomsFuture, // Use the state variable here
         builder: (context, snapshot) {
@@ -189,7 +190,16 @@ class _RearrangeShelvesPageState extends State<RearrangeShelvesPage> {
                 clipBehavior: Clip.antiAlias,
                 child: InkWell(
                   onTap: () {
-                    debugPrint("Tapped on ${room['room_name']}");
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => RoomShelvesPage(
+                          roomId: room['room_id'].toString(),
+                          roomName: room['room_name'].toString(),
+                          householdId: room['household_id'].toString(),
+                        ),
+                      ),
+                    );
                   },
                   child: Center(
                     child: Padding(

@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'rearrangeshelvesscreen.dart';
+import 'rearrangeroomsscreen.dart';
 import 'scanormanual.dart';
 
 class EditCatalogScreen extends StatefulWidget {
@@ -14,7 +14,7 @@ class _EditCatalogScreenState extends State<EditCatalogScreen> {
     // GridItemData(title: "Add Books", color: Colors.teal[100]!, icon: Icon(Icons.add_circle_outlined),targetPage: const AddBooksPage()),
     GridItemData(title: "Add Books", color: Colors.teal[100]!, icon: Icon(Icons.add_circle_outlined),targetPage: const ScanOrManualScreen()),
     GridItemData(title: "Remove Books", color: Colors.teal[200]!, icon: Icon(Icons.remove_circle_outlined), targetPage: const RemoveBooksPage()),
-    GridItemData(title: "Rearrange Shelves", color: Colors.teal[300]!, icon: Icon(Icons.swap_calls_outlined), targetPage: const RearrangeShelvesPage()),
+    GridItemData(title: "Rearrange Shelves", color: Colors.teal[300]!, icon: Icon(Icons.swap_calls_outlined), targetPage: const RearrangeRoomsPage()),
     GridItemData(title: "Edit Books", color: Colors.teal[400]!, icon: Icon(Icons.edit_outlined), targetPage: const EditBooksPage()),
   ];
   
