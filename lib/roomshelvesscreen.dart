@@ -125,6 +125,141 @@ class _RoomShelvesPageState extends State<RoomShelvesPage> {
     );
   }
 
+  Future<void> _handleRemoveShelf(String shelfId, String shelfName) async {
+    final supabase = Supabase.instance.client;
+
+    final booksResponse = await supabase
+      .from('book_tab')
+      .select('book_id')
+      .eq('shelf_id', shelfId);
+
+    final bookCount = booksResponse.length;
+
+    if (bookCount == 0) {
+      await supabase.from('bookshelf_tab').delete().eq('shelf_id', shelfId);
+      setState(() {
+        _shelvesFuture = _fetchShelves();
+      });
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text("$shelfName deleted.")),
+        );
+      }
+      return;
+    }
+
+    if (!mounted) return;
+
+    final alternativeShelves = await supabase
+      .from('bookshelf_tab')
+      .select('shelf_id, shelf_name, room_tab(room_name)')
+      .eq('household_id', widget.householdId)
+      .neq('shelf_id', shelfId)
+      .order('shelf_name', ascending: true);
+
+    if(!mounted) return;
+
+    String? selectedTargetShelfId;
+    bool isMigrating = false;
+
+    await showDialog(
+      context: context, 
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (context, setDialogState) {
+            return AlertDialog(
+              title: const Text("Delete Shelf"),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    "'$shelfName' contains $bookCount books. Where would you like to move them?", 
+                  ),
+                  const SizedBox(height: 16),
+                  DropdownButtonFormField<String?>(
+                    decoration: const InputDecoration(
+                      labelText: "Destination",
+                      border: OutlineInputBorder(),
+                    ),
+                    initialValue: selectedTargetShelfId,
+                    items: [
+                      const DropdownMenuItem(
+                        value: null,
+                        child: Text("Leave Unassigned"),
+                      ),
+
+                      ...alternativeShelves.map((shelf) {
+                        final roomName = shelf['room_tab']['room_name'];
+                        return DropdownMenuItem(
+                          value: shelf['shelf_id'].toString(),
+                          child: Text("${shelf['shelf_name']} ($roomName)"),
+                        );
+                      }),
+                    ], 
+                    onChanged: (value) {
+                      setDialogState(() {
+                        selectedTargetShelfId = value;
+                      });
+                    },
+                  ),
+                ],
+              ),
+              actions: [
+                TextButton(
+                  onPressed: isMigrating ? null : () => Navigator.pop(context), 
+                  child: const Text("Cancel"),
+                ),
+                FilledButton(
+                  onPressed: isMigrating ? null : () async {
+                    setDialogState(() => isMigrating = true);
+
+                    try {
+                      if (selectedTargetShelfId != null) {
+                        await supabase
+                          .from('book_tab')
+                          .update({'shelf_id': selectedTargetShelfId})
+                          .eq('shelf_id', shelfId);
+                      }
+
+                      // If the selected target shelf id is null, we do nothing
+                      // because it is handled by the ON DELETE SET NULL constraint
+                      // automatically
+
+                      await supabase
+                        .from('bookshelf_tab')
+                        .delete()
+                        .eq('shelf_id', shelfId);
+                    
+                      if (context.mounted) {
+                        Navigator.pop(context);
+                        setState(() {
+                          _shelvesFuture = _fetchShelves();
+                        });
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(content: Text("Shelf deleted and books moved."))
+                        );
+                      }
+                    } catch (e) {
+                      setDialogState(() => isMigrating = false);
+                      debugPrint("Error migrating books: $e");
+                    }
+                  }, 
+                  style: FilledButton.styleFrom(backgroundColor: Colors.red),
+                  child: isMigrating ? const SizedBox(
+                    width: 16,
+                    height: 16,
+                    child: CircularProgressIndicator(color: Colors.white, strokeAlign: 2),
+                  ) : const Text("Delete"),
+                )
+              ],
+            );
+          },
+        );
+      } 
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -181,14 +316,17 @@ class _RoomShelvesPageState extends State<RoomShelvesPage> {
                         ),
                         child: const Text("Change Room"),
                       ),
-                      TextButton(
+                      IconButton(
                         onPressed: () {
-                          debugPrint("Pressed 'Remove Shelf' Button");
+                          _handleRemoveShelf(
+                            shelf['shelf_id'].toString(), 
+                            shelf['shelf_name'].toString()
+                          );
                         }, 
                         style: ButtonStyle(
                           foregroundColor: WidgetStatePropertyAll<Color?>(Colors.lightBlue),
                         ),
-                        child: const Text("Remove Shelf"),
+                        icon: Icon(Icons.delete, color: Colors.red,),
                       ),
                     ],
                   ),
