@@ -160,7 +160,38 @@ class _RoomShelvesPageState extends State<RoomShelvesPage> {
                     shelf['shelf_name'].toString(),
                     style: const TextStyle(fontWeight: FontWeight.bold)
                   ),
-                  trailing: const Icon(Icons.chevron_right),
+                  trailing: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: <Widget>[
+                      TextButton(
+                        onPressed: () {
+                          debugPrint("Pressed 'Rename' Button");
+                        }, 
+                        style: ButtonStyle(
+                          foregroundColor: WidgetStatePropertyAll<Color?>(Colors.lightBlue),
+                        ),
+                        child: const Text("Rename"),
+                      ),
+                      TextButton(
+                        onPressed: () {
+                          debugPrint("Pressed 'Change Room' Button");
+                        }, 
+                        style: ButtonStyle(
+                          foregroundColor: WidgetStatePropertyAll<Color?>(Colors.lightBlue),
+                        ),
+                        child: const Text("Change Room"),
+                      ),
+                      TextButton(
+                        onPressed: () {
+                          debugPrint("Pressed 'Remove Shelf' Button");
+                        }, 
+                        style: ButtonStyle(
+                          foregroundColor: WidgetStatePropertyAll<Color?>(Colors.lightBlue),
+                        ),
+                        child: const Text("Remove Shelf"),
+                      ),
+                    ],
+                  ),
                   onTap: () {
                     debugPrint("Tapped on shelf: ${shelf['shelf_name']}");
                   },
