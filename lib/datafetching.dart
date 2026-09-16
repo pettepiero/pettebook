@@ -147,7 +147,7 @@ Future<List<Map<String, dynamic>>> fetchEditionsFromWork(String workKey) async {
 
         return {
           'title': title,
-          'yaer': date,
+          'year': date,
           'pub': publisher,
           'isbn': editionIsbn,
           'cover_id': coverId,
