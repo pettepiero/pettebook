@@ -341,14 +341,12 @@ class ShelfSelectionSheet extends StatelessWidget {
                       leading: const Icon(Icons.library_books), // Replaced invalid Icons.shelves
                       title: Text(shelf['shelf_name'].toString()),
                       onTap: () async {
-                        // 1. Close the bottom sheet
-                        Navigator.pop(context);
 
-			debugPrint("\nClosed the bottom sheet and about to call bookAdder.");
-			debugPrint("book: $book");
-			debugPrint("shelfId: ${shelf['shelf_id']}");
-			debugPrint("shelf['household_id']: ${shelf['household_id']}");
-			debugPrint("userId: $userId\n");
+												debugPrint("\nClosed the bottom sheet and about to call bookAdder.");
+												debugPrint("book: $book");
+												debugPrint("shelfId: ${shelf['shelf_id']}");
+												debugPrint("shelf['household_id']: ${shelf['household_id']}");
+												debugPrint("userId: $userId\n");
                         
                         // 2. Add the book to the selected shelf
                         bool success = await bookAdder(
@@ -357,15 +355,22 @@ class ShelfSelectionSheet extends StatelessWidget {
                           householdId: shelf['household_id'],
                           userId: userId
                         );
+												if (!context.mounted) return;
                         
-			if (!context.mounted) return;
-
-			if (success) {
+												if (success) {
                           // 3. Show a success message
                           ScaffoldMessenger.of(context).showSnackBar(
                             SnackBar(content: Text('Added to ${shelf['shelf_name']}')),
                           );
-			}
+												} else {
+													ScaffoldMessenger.of(context).showSnackBar(
+														SnackBar(
+															content: Text('Error adding book.'), 
+															backgroundColor: Colors.red)
+													);
+												}
+                        // 1. Close the bottom sheet
+                        Navigator.pop(context);
                       },
                     );
                   },

@@ -86,9 +86,7 @@ Future<bool> addFromISBN(Map<String, dynamic> book, String shelfId, String house
 }
 
 /// Given an ISBN string, returns true if it is already present in book_tab
-Future<bool> isPresentISBN(String isbn) async {
-  final supabase = Supabase.instance.client;
-
+Future<bool> isPresentISBN(String isbn, {Future<bool> Function(String colName, String isbn)? fakeDbCheck}) async {
 	String? colName = null;
 	// Modify this to check both isbn_13 and isbn_10 from book_tab
 	if (isbn.length == 13) {
@@ -99,6 +97,11 @@ Future<bool> isPresentISBN(String isbn) async {
 		throw StateError("Length of ISBN is neither 13 nor 10.");	
 	}	
 
+	if (fakeDbCheck != null) {
+		return await fakeDbCheck(colName, isbn);
+	}
+
+	final supabase = Supabase.instance.client;
   final res = await supabase
       .from('book_tab')
       .select(colName)
@@ -126,10 +129,10 @@ Future<Map<String, dynamic>> olBookDataExtractor(Map<String, dynamic> book) asyn
 
   return {
     'title': book['title'],
-    'author_id': authorId?.first,
-    'isbn_13': book['isbn_13'] !=null ? book['isbn_13'].first : null,
-    'isbn_10': book['isbn_10'] !=null ? book['isbn_10'].first : null,
-    'publisher_id': publisherId?.first,
+    'author_id': (authorId != null && authorId.isNotEmpty) ? authorId.first : null,
+    'isbn_13': (book['isbn_13'] !=null && book['isbn_13'].isNotEmpty) ? book['isbn_13'].first : null,
+    'isbn_10': (book['isbn_10'] !=null && book['isbn_10'].isNotEmpty) ? book['isbn_10'].first : null,
+    'publisher_id': (publisherId != null && publisherId.isNotEmpty) ? publisherId.first : null,
     'year': book['year'],
     'lent': false,
     'borrowed_to': null,
@@ -256,7 +259,8 @@ Future<List<String>?> getPublisherID({required List<dynamic> publishers}) async 
         pub['pub_id'] as String: normalizePublisherName(pub['pub_name'] as String)
     };
 
-    for (String originalName in publishers) {
+    for (var item in publishers) {
+			String originalName = item.toString();
       if (originalName.trim().isEmpty) continue;
 
       // Normalize the incoming name
@@ -281,7 +285,7 @@ Future<List<String>?> getPublisherID({required List<dynamic> publishers}) async 
             .select('pub_id')
             .single();
 
-        String newId = insertResponse['publisher_id'] as String;
+        String newId = insertResponse['pub_id'] as String;
 
         // Add the NORMALIZED name to the local map to catch duplicates in the same batch
         normalizedPublishersMap[newId] = targetNormalizedName;
