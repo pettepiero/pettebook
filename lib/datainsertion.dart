@@ -56,7 +56,7 @@ Future<bool> addFromISBN(Map<String, dynamic> book, String shelfId, String house
 
         // Extracts the data
         Map<String, dynamic> entryData = await olBookDataExtractor(data);
-	debugPrint("Returned from olBookDataExtractor safely \n");
+				debugPrint("Returned from olBookDataExtractor safely \n");
 
         // Add the last missing data for insertion:
         // shelfId, userId, household_id
@@ -64,16 +64,16 @@ Future<bool> addFromISBN(Map<String, dynamic> book, String shelfId, String house
         entryData['user_id'] = userId;
         entryData['household_id'] = householdId;
 
-	debugPrint("Final candidate data: ");
-	for (final e in entryData.entries) {
-	  debugPrint("${e.key} = ${e.value}");
-	}	
+				debugPrint("Final candidate data: ");
+				for (final e in entryData.entries) {
+				  debugPrint("${e.key} = ${e.value}");
+				}	
 	
-	final supabase = Supabase.instance.client;
+				final supabase = Supabase.instance.client;
 
-	final insertResponse = await supabase
-	  .from('book_tab')
-	  .insert(entryData);
+				final insertResponse = await supabase
+				  .from('book_tab')
+				  .insert(entryData);
         
       }
     } catch (error) {
@@ -121,12 +121,14 @@ Future<Map<String, dynamic>> olBookDataExtractor(Map<String, dynamic> book) asyn
   final publisherId = await getPublisherID(publishers: book['publishers']);
 
   debugPrint("\n\n Obtained authorId: $authorId and publisherId: $publisherId");
+	debugPrint("isbn_13: ${book['isbn_13']}");
+	debugPrint("isbn_10: ${book['isbn_10']}");
 
   return {
     'title': book['title'],
     'author_id': authorId?.first,
-    'isbn_13': book['isbn_13'].first,
-    'isbn_10': book['isbn_10'].first,
+    'isbn_13': book['isbn_13'] !=null ? book['isbn_13'].first : null,
+    'isbn_10': book['isbn_10'] !=null ? book['isbn_10'].first : null,
     'publisher_id': publisherId?.first,
     'year': book['year'],
     'lent': false,
