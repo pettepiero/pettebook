@@ -46,6 +46,8 @@ class ExternalBookDetailScreen extends StatelessWidget {
 
     final Future<List<Map<String, dynamic>>> isbnList = fetchEditionsFromWork(workKey);
 
+    debugPrint("Done fetching editions and back to ExternalBookDetailScreen.");
+
     //String imageUrl = '';
 
     //if (coverId != null && coverId.isNotEmpty){
@@ -54,6 +56,8 @@ class ExternalBookDetailScreen extends StatelessWidget {
     //  imageUrl = 'https://covers.openlibrary.org/b/isbn/$isbn-M.jpg';
     //}
     Widget cover = getCover(book: book);
+
+    debugPrint("Done fetching the cover.");
 
     return Scaffold(
       appBar: AppBar(
@@ -96,10 +100,6 @@ class ExternalBookDetailScreen extends StatelessWidget {
                           const SizedBox(height: 4),
                           Text(
                             "Publisher: ${book['pub']?.toString() ?? "Unknown Publisher"}"
-                          ),
-                          const SizedBox(height: 4),
-                          Text(
-                            "ISBN: ${book['isbn']?.toString() ?? "Unknown ISBN"}"
                           ),
                         ],
                       )
@@ -162,13 +162,16 @@ class ExternalBookDetailScreen extends StatelessWidget {
                               ),
                             child: const Text("Add to library"),
                             onPressed: () async {
+			      debugPrint("In onPressed() method.");
                               final String? userId = Supabase.instance.client.auth.currentUser?.id;
+			      debugPrint("In onPressed() method: userId: $userId");
                               if (userId == null) {
                                 ScaffoldMessenger.of(context).showSnackBar(
                                   const SnackBar(content: Text("Please log in to add books.")),
                                  );
                                 return;
                               }
+			      debugPrint("In onPressed() method: userId is not null. Calling showModelBottomSheet");
 
                               showModalBottomSheet(
                                 context: context, 
@@ -299,6 +302,9 @@ class ShelfSelectionSheet extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+
+    debugPrint("In builder of ShelfSelectionSheet");
+
     return Container(
       padding: const EdgeInsets.all(16.0),
       child: SafeArea(
@@ -337,19 +343,29 @@ class ShelfSelectionSheet extends StatelessWidget {
                       onTap: () async {
                         // 1. Close the bottom sheet
                         Navigator.pop(context);
+
+			debugPrint("\nClosed the bottom sheet and about to call bookAdder.");
+			debugPrint("book: $book");
+			debugPrint("shelfId: ${shelf['shelf_id']}");
+			debugPrint("shelf['household_id']: ${shelf['household_id']}");
+			debugPrint("userId: $userId\n");
                         
                         // 2. Add the book to the selected shelf
-                        await bookAdder(
+                        bool success = await bookAdder(
                           book: book, 
                           shelfId: shelf['shelf_id'], 
                           householdId: shelf['household_id'],
                           userId: userId
                         );
                         
-                        // 3. Show a success message
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(content: Text('Added to ${shelf['shelf_name']}')),
-                        );
+			if (!context.mounted) return;
+
+			if (success) {
+                          // 3. Show a success message
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(content: Text('Added to ${shelf['shelf_name']}')),
+                          );
+			}
                       },
                     );
                   },

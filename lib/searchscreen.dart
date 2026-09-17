@@ -96,7 +96,7 @@ class _SearchScreenState extends State<SearchScreen> {
               subtitle: Text(book['authors']?.toString() ?? 'Unknown Author'),
               dense: true,
               onTap: () {
-                debugPrint('Selected: $book');
+                debugPrint('\nSelected: $book');
                 Navigator.push(
                   context,
                   MaterialPageRoute(

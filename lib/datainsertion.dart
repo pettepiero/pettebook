@@ -8,13 +8,16 @@ import 'package:http/http.dart' as http;
 /// The outermost layer of the methods that allow adding a book to the database.
 Future<bool> bookAdder({
   required Map<String, dynamic> book, 
-  required int shelfId, 
-  required int householdId, 
+  required String shelfId, 
+  required String householdId, 
   required String userId
   }) async {
   // First, check if ISBN is present
-  if (book['isbn'] != null) {
-    return addFromISBN(book, shelfId, userId);
+  debugPrint("In bookAdder: book: $book");
+  if (book['isbn'] != null && book['isbn'].toString().isNotEmpty)  {
+    debugPrint("Got isbn: ${book['isbn']}");
+    debugPrint("Running addFromISBN");
+    return addFromISBN(book, shelfId, householdId, userId);
   } else {
     Map<String, dynamic> bookInfo = await getMissingInfo(book);
     return manualInsertion(bookInfo);
@@ -29,7 +32,7 @@ Future<bool> bookAdder({
 ///
 /// If it doesn't find the ISBN code from OL catalog, it asks the user to insert
 /// the entry manually using manualInsertion method.
-Future<bool> addFromISBN(Map<String, dynamic> book, int shelfId, String userId) async {
+Future<bool> addFromISBN(Map<String, dynamic> book, String shelfId, String householdId, String userId) async {
   // Check if ISBN is already present in the database.
   String isbn = book['isbn'];
   final isPresent = await isPresentISBN(isbn);
@@ -42,22 +45,35 @@ Future<bool> addFromISBN(Map<String, dynamic> book, int shelfId, String userId) 
     // searching for info using the OpenLibrary API
     try {
       final url = Uri.parse('https://openlibrary.org/isbn/$isbn.json');
+      debugPrint("\n Created url: $url");
       final response = await http.get(url);
 
+      debugPrint("response.statusCode: ${response.statusCode}");
       if (response.statusCode == 200){
-        final data = json.decode(response.body);
-        final entries = data['entries'] as List<dynamic>? ?? [];
+        final Map<String, dynamic> data = json.decode(response.body);
 
-        final candidate = entries.first;
-        debugPrint("Candidate entry: $candidate");
+        debugPrint("Candidate entry: $data");
 
         // Extracts the data
-        Map<String, dynamic> entryData = olBookDataExtractor(candidate);
+        Map<String, dynamic> entryData = await olBookDataExtractor(data);
+	debugPrint("Returned from olBookDataExtractor safely \n");
 
         // Add the last missing data for insertion:
         // shelfId, userId, household_id
-        entryData['shelfId'] = shelfId;
-        entryData['userId'] = userId;
+        entryData['shelf_id'] = shelfId;
+        entryData['user_id'] = userId;
+        entryData['household_id'] = householdId;
+
+	debugPrint("Final candidate data: ");
+	for (final e in entryData.entries) {
+	  debugPrint("${e.key} = ${e.value}");
+	}	
+	
+	final supabase = Supabase.instance.client;
+
+	final insertResponse = await supabase
+	  .from('book_tab')
+	  .insert(entryData);
         
       }
     } catch (error) {
@@ -72,42 +88,63 @@ Future<bool> addFromISBN(Map<String, dynamic> book, int shelfId, String userId) 
 /// Given an ISBN string, returns true if it is already present in book_tab
 Future<bool> isPresentISBN(String isbn) async {
   final supabase = Supabase.instance.client;
-  final PostgrestResponse<PostgrestList> res = await supabase
-      .from('book_tab')
-      .select()
-      .count(CountOption.exact);
 
-  return (res.count != 0);
+	String? colName = null;
+	// Modify this to check both isbn_13 and isbn_10 from book_tab
+	if (isbn.length == 13) {
+		colName = 'isbn_13';
+	} else if (isbn.length == 10) {
+		colName = 'isbn_10';
+	} else {
+		throw StateError("Length of ISBN is neither 13 nor 10.");	
+	}	
+
+  final res = await supabase
+      .from('book_tab')
+      .select(colName)
+      .eq(colName, isbn)
+      .limit(1);
+
+  return res.isNotEmpty;
 }
 
 /// Given a Map of book data from OL, extracts only the necessary data 
 /// for the database.
-/// Note: author_id is first set to null, and then it is obtained by the dedicated
-/// function getAuthorID. Same thing happens for publisher_id.
-Map<String, dynamic> olBookDataExtractor(Map<String, dynamic> book) {
+/// Note: authorId is first set to null, and then it is obtained by the dedicated
+/// function getAuthorID. Same thing happens for publisherId.
+Future<Map<String, dynamic>> olBookDataExtractor(Map<String, dynamic> book) async {
+  debugPrint("in olBookDataExtractor");
+  debugPrint("type of book['authors']: ${book['authors'].runtimeType}");
+  debugPrint("isbn_13: ${book['isbn_13']}");
 
-  final author_id = getAuthorID(authors: book['authors']);
-  final publisher_id = getPublisherID(publishers: book['publishers']);
+  final authorId = await getAuthorID(authors: book['authors']);
+  final publisherId = await getPublisherID(publishers: book['publishers']);
+
+  debugPrint("\n\n Obtained authorId: $authorId and publisherId: $publisherId");
 
   return {
     'title': book['title'],
-    'author_id': author_id,
-    'isbn': book['isbn'],
-    'publisher_id': publisher_id,
+    'author_id': authorId?.first,
+    'isbn_13': book['isbn_13'].first,
+    'isbn_10': book['isbn_10'].first,
+    'publisher_id': publisherId?.first,
     'year': book['year'],
-    'shelf_id': null,
     'lent': false,
     'borrowed_to': null,
-    'language': book['languages'],
+    'languages': (book['languages'] != null)
+        ? (book['languages'] as List).map((lang) => 
+            (lang['key'] as String).replaceAll('/languages/', '')).toList()
+        : [''],
   };
 }
 
 /// Given a list of OL author keys, fetches the names using the author API and
 /// subsequently searches them in database to obtain the local index. If the 
 /// author is not present in the database, it is added and the new id is returned.
-Future<List<int>?> getAuthorID({required List<Map<String, String>> authors}) async {
+Future<List<String>?> getAuthorID({required List<dynamic> authors}) async {
+  debugPrint("In getAuthorID: passed authors: $authors");
   final supabase = Supabase.instance.client;
-  List<int> processAuthorIds = [];
+  List<String> processAuthorIds = [];
 
   // Fetch the authors table once before the loop.
   // TODO: if the database grows big, this needs to be made more efficient.
@@ -115,10 +152,14 @@ Future<List<int>?> getAuthorID({required List<Map<String, String>> authors}) asy
     .from('author_tab')
     .select('author_f_name, author_l_name, author_id');
 
-  Map<int, String> authorsMap = {
+  debugPrint("Got over supabase query: $res");
+
+  Map<String, String> authorsMap = {
     for (var author in res)
-      author['author_id'] as int: '${author['author_f_name']} ${author['author_l_name']}'
+      author['author_id'] as String: '${author['author_f_name']} ${author['author_l_name']}'
   };
+
+  debugPrint("Got authorsMap: $authorsMap");
   
   for (var authorMap in authors) {
     try {
@@ -139,7 +180,7 @@ Future<List<int>?> getAuthorID({required List<Map<String, String>> authors}) asy
         List<String> candidateNames = rawAltNames.map((e) => e.toString()).toList();
         candidateNames.insert(0, personalName);
 
-        int? matchedAuthorId;
+        String? matchedAuthorId;
 
         // Now we need to search for personalName in database and if present
         // retrieve the index. If not present, repeat with alternateNames. If
@@ -157,6 +198,7 @@ Future<List<int>?> getAuthorID({required List<Map<String, String>> authors}) asy
         }
 
         if (matchedAuthorId != null) {
+          debugPrint("Adding matchedAuthorId: $matchedAuthorId");
           processAuthorIds.add(matchedAuthorId);
         } else {
           final nameParts = splitFullName(personalName);
@@ -174,7 +216,7 @@ Future<List<int>?> getAuthorID({required List<Map<String, String>> authors}) asy
             .select('author_id')
             .single();
 
-          int newId = insertResponse['author_id'] as int;
+          String newId = insertResponse['author_id'] as String;
           authorsMap[newId] = '${nameParts['firstName']} ${nameParts['lastName']}';
 
           // Add new ID to our result list
@@ -197,19 +239,19 @@ Future<List<int>?> getAuthorID({required List<Map<String, String>> authors}) asy
 /// Given a list of publisher names, sees if they are present in the database and
 /// eventually returns their pub_id. If they are not present, it adds them to the
 /// database and returns the new id.
-Future<List<int>> getPublisherID({required List<String> publishers}) async {
+Future<List<String>?> getPublisherID({required List<dynamic> publishers}) async {
   final supabase = Supabase.instance.client;
-  List<int> processedPublisherIds = []; 
+  List<String> processedPublisherIds = []; 
 
   try {
     final PostgrestList res = await supabase
-        .from('publishers_tab')
-        .select('publisher_id, publisher_name');
+        .from('publisher_tab')
+        .select('pub_id, pub_name');
 
     // Store the ID as the key, and the NORMALIZED name as the value for easy matching
-    Map<int, String> normalizedPublishersMap = {
+    Map<String, String> normalizedPublishersMap = {
       for (var pub in res)
-        pub['publisher_id'] as int: normalizePublisherName(pub['publisher_name'] as String)
+        pub['pub_id'] as String: normalizePublisherName(pub['pub_name'] as String)
     };
 
     for (String originalName in publishers) {
@@ -228,16 +270,16 @@ Future<List<int>> getPublisherID({required List<String> publishers}) async {
       } else {
         var newPublisherData = {
           // Save the original, correctly-capitalized name to the database
-          "publisher_name": originalName.trim(), 
+          "pub_name": originalName.trim(), 
         };
 
         final insertResponse = await supabase
-            .from('publishers_tab')
+            .from('publisher_tab')
             .insert(newPublisherData)
-            .select('publisher_id')
+            .select('pub_id')
             .single();
 
-        int newId = insertResponse['publisher_id'] as int;
+        String newId = insertResponse['publisher_id'] as String;
 
         // Add the NORMALIZED name to the local map to catch duplicates in the same batch
         normalizedPublishersMap[newId] = targetNormalizedName;
