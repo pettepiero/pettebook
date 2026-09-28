@@ -160,3 +160,36 @@ Future<List<Map<String, dynamic>>> fetchEditionsFromWork(String workKey) async {
     return [];
   }
 }
+
+Future<List<Map<String, dynamic>>> fetchRooms() async {
+  final supabase = Supabase.instance.client;
+  final response = await supabase
+      .from('room_tab')
+      .select('room_id, room_name, household_id')
+      .order('room_name', ascending: true);
+
+  return List<Map<String, dynamic>>.from(response);
+}
+
+
+Future<List<Map<String, dynamic>>> fetchShelves(String roomId) async {
+  final supabase = Supabase.instance.client;
+  final response = await supabase
+    .from('library_view')
+    .select('shelf_name')
+    .eq('room_name', roomId)
+    .order('shelf_name', ascending: true);
+
+  return List<Map<String, dynamic>>.from(response);
+}
+
+Future<List<Map<String, dynamic>>> fetchBooks(String shelfId) async {
+  final supabase = Supabase.instance.client;
+  final response = await supabase
+    .from('book_tab')
+    .select('title, book_id')
+    .eq('shelf_id', shelfId)
+    .order('title', ascending: true);
+
+  return List<Map<String, dynamic>>.from(response);
+}

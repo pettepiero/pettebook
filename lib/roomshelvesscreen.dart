@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:pettebook/datafetching.dart';
 
 
 class RoomShelvesPage extends StatefulWidget {
@@ -24,18 +25,7 @@ class _RoomShelvesPageState extends State<RoomShelvesPage> {
   @override
   void initState() {
     super.initState();
-    _shelvesFuture = _fetchShelves();
-  }
-
-  Future<List<Map<String, dynamic>>> _fetchShelves() async {
-    final supabase = Supabase.instance.client;
-    final response = await supabase
-      .from('bookshelf_tab')
-      .select('shelf_id, shelf_name')
-      .eq('room_id', widget.roomId)
-      .order('shelf_name', ascending: true);
-
-    return List<Map<String, dynamic>>.from(response);
+    _shelvesFuture = fetchShelves(widget.roomId);
   }
 
   Future<void> _showAddShelfDialog(BuildContext context) async {
@@ -99,7 +89,7 @@ class _RoomShelvesPageState extends State<RoomShelvesPage> {
                       if (context.mounted) {
                         Navigator.pop(context);
                         setState(() {
-                          _shelvesFuture = _fetchShelves(); 
+                          _shelvesFuture = fetchShelves(widget.roomId); 
                         });
                         ScaffoldMessenger.of(context).showSnackBar(
                           SnackBar(content: Text("Added $newShelfName")),
@@ -138,7 +128,7 @@ class _RoomShelvesPageState extends State<RoomShelvesPage> {
     if (bookCount == 0) {
       await supabase.from('bookshelf_tab').delete().eq('shelf_id', shelfId);
       setState(() {
-        _shelvesFuture = _fetchShelves();
+        _shelvesFuture = fetchShelves(widget.roomId);
       });
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -234,7 +224,7 @@ class _RoomShelvesPageState extends State<RoomShelvesPage> {
                       if (context.mounted) {
                         Navigator.pop(context);
                         setState(() {
-                          _shelvesFuture = _fetchShelves();
+                          _shelvesFuture = fetchShelves(widget.roomId);
                         });
                         ScaffoldMessenger.of(context).showSnackBar(
                           SnackBar(content: Text("Shelf deleted and books moved."))

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'rearrangeroomsscreen.dart';
 import 'scanormanual.dart';
+import 'removebooksscreen.dart';
 
 class EditCatalogScreen extends StatefulWidget {
   const EditCatalogScreen({super.key});
@@ -13,7 +14,7 @@ class _EditCatalogScreenState extends State<EditCatalogScreen> {
   final List<GridItemData> _gridItems = [
     // GridItemData(title: "Add Books", color: Colors.teal[100]!, icon: Icon(Icons.add_circle_outlined),targetPage: const AddBooksPage()),
     GridItemData(title: "Add Books", color: Colors.teal[100]!, icon: Icon(Icons.add_circle_outlined),targetPage: const ScanOrManualScreen()),
-    GridItemData(title: "Remove Books", color: Colors.teal[200]!, icon: Icon(Icons.remove_circle_outlined), targetPage: const RemoveBooksPage()),
+    GridItemData(title: "Remove Books", color: Colors.teal[200]!, icon: Icon(Icons.remove_circle_outlined), targetPage: const RemoveBooksRoomPage()),
     GridItemData(title: "Rearrange Shelves", color: Colors.teal[300]!, icon: Icon(Icons.swap_calls_outlined), targetPage: const RearrangeRoomsPage()),
     GridItemData(title: "Edit Books", color: Colors.teal[400]!, icon: Icon(Icons.edit_outlined), targetPage: const EditBooksPage()),
   ];
@@ -97,5 +98,4 @@ class GridItemData {
 
 
 class AddBooksPage extends StatelessWidget {const AddBooksPage({super.key}); @override Widget build(BuildContext context) => Scaffold(appBar: AppBar(title: const Text("Add Books")),);}
-class RemoveBooksPage extends StatelessWidget {const RemoveBooksPage({super.key}); @override Widget build(BuildContext context) => Scaffold(appBar: AppBar(title: const Text("Remove Books")),);}
 class EditBooksPage extends StatelessWidget {const EditBooksPage({super.key}); @override Widget build(BuildContext context) => Scaffold(appBar: AppBar(title: const Text("Edit Books")),);}

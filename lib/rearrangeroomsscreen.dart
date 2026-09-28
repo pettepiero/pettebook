@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'roomshelvesscreen.dart';
+import 'package:pettebook/datafetching.dart';
+import 'package:pettebook/removebooksscreen.dart';
+import 'package:pettebook/components.dart';
 
 class RearrangeRoomsPage extends StatefulWidget {
   const RearrangeRoomsPage({super.key});
@@ -15,17 +18,7 @@ class _RearrangeRoomsPageState extends State<RearrangeRoomsPage> {
   @override
   void initState() {
     super.initState();
-    _roomsFuture = _fetchRooms(); 
-  }
-
-  Future<List<Map<String, dynamic>>> _fetchRooms() async {
-    final supabase = Supabase.instance.client;
-    final response = await supabase
-        .from('room_tab')
-        .select('room_id, room_name, household_id')
-        .order('room_name', ascending: true);
-
-    return List<Map<String, dynamic>>.from(response);
+    _roomsFuture = fetchRooms(); 
   }
 
   Future<void> _showAddRoomDialog(BuildContext context) async {
@@ -123,7 +116,7 @@ class _RearrangeRoomsPageState extends State<RearrangeRoomsPage> {
                         Navigator.pop(context);
                         setState(() {
                           _roomsFuture =
-                              _fetchRooms(); // Triggers the FutureBuilder to rebuild
+                              fetchRooms(); // Triggers the FutureBuilder to rebuild
                         });
                         ScaffoldMessenger.of(context).showSnackBar(
                           SnackBar(content: Text('Added $roomName')),
@@ -171,53 +164,22 @@ class _RearrangeRoomsPageState extends State<RearrangeRoomsPage> {
               ),
             );
           }
-
-          return GridView.builder(
-            padding: const EdgeInsets.all(16.0),
-            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-              crossAxisCount: 2,
-              crossAxisSpacing: 16.0,
-              mainAxisSpacing: 16.0,
-              childAspectRatio: 1.0,
-            ),
-            itemCount: rooms.length,
-            itemBuilder: (context, index) {
-              final room = rooms[index];
-
-              return Material(
-                color: Theme.of(context).colorScheme.surfaceContainerHighest,
-                borderRadius: BorderRadius.circular(16),
-                clipBehavior: Clip.antiAlias,
-                child: InkWell(
-                  onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => RoomShelvesPage(
-                          roomId: room['room_id'].toString(),
-                          roomName: room['room_name'].toString(),
-                          householdId: room['household_id'].toString(),
-                        ),
-                      ),
-                    );
-                  },
-                  child: Center(
-                    child: Padding(
-                      padding: const EdgeInsets.all(8.0),
-                      child: Text(
-                        room['room_name'].toString(),
-                        textAlign: TextAlign.center,
-                        style: const TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-              );
-            },
-          );
+					
+					return RoomGrid(
+						rooms: rooms,
+						onRoomSelected: (room) {
+							Navigator.push(
+								context,
+								MaterialPageRoute(
+									builder: (context) => RemoveBooksShelvesPage(
+										roomId: room['room_id'].toString(),
+										roomName: room['room_name'].toString(),
+										householdId: room['household_id'].toString(),
+									), //RemoveBooksShelvesPage
+								), //MaterialPageRoute
+							);
+						},
+					); //RoomGrid
         },
       ),
       floatingActionButton: FloatingActionButton(

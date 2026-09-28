@@ -135,3 +135,131 @@ String normalizePublisherName(String name) {
   // 4. Rejoin the string
   return words.join(' ').trim();
 }
+
+class RoomGrid extends StatelessWidget {
+	final List<Map<String, dynamic>> rooms;
+	final Function(Map<String, dynamic> room) onRoomSelected;
+
+	const RoomGrid({
+		super.key,
+		required this.rooms,
+		required this.onRoomSelected,
+	});
+
+	@override
+	Widget build(BuildContext context) {
+		if (rooms.isEmpty) {
+			return const Center(
+				child: Text("No rooms found."),
+				);
+		}
+
+    return GridView.builder(
+      padding: const EdgeInsets.all(16.0),
+      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: 2,
+        crossAxisSpacing: 16.0,
+        mainAxisSpacing: 16.0,
+        childAspectRatio: 1.0,
+      ),
+      itemCount: rooms.length,
+      itemBuilder: (context, index) {
+        final room = rooms[index];
+
+        return Material(
+          color: Theme.of(context).colorScheme.surfaceContainerHighest,
+          borderRadius: BorderRadius.circular(16),
+          clipBehavior: Clip.antiAlias,
+          child: InkWell(
+            onTap: () => onRoomSelected(room),
+					//						{
+          //    Navigator.push(
+          //      context,
+          //      MaterialPageRoute(
+          //        builder: (context) => RoomShelvesPage(
+          //          roomId: room['room_id'].toString(),
+          //          roomName: room['room_name'].toString(),
+          //          householdId: room['household_id'].toString(),
+          //        ),
+          //      ),
+          //    );
+          //  },
+            child: Center(
+              child: Padding(
+                padding: const EdgeInsets.all(8.0),
+                child: Text(
+                  room['room_name'].toString(),
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+            ),
+          ),
+        );
+      },
+    );
+
+	}
+
+}
+
+
+class ShelfList extends StatelessWidget {
+	final List<Map<String, dynamic>> shelves;
+	final Function(Map<String, dynamic> shelf) onShelfSelected;
+
+	const ShelfList({
+		super.key,
+		required this.shelves,
+		required this.onShelfSelected,
+	});
+
+	@override
+	Widget build(BuildContext context) {
+		if (shelves.isEmpty) return const Center(child: Text("No shelves found."));
+
+		return ListView.builder(
+			itemCount: shelves.length,
+			itemBuilder: (context, index) {
+				final shelf = shelves[index];
+				return ListTile(
+					title: Text(shelf['shelf_name'].toString()),
+					onTap: () => onShelfSelected(shelf),
+				);	
+			},
+		);
+	}
+}
+
+
+class BookList extends StatelessWidget {
+	final List<Map<String, dynamic>> books;
+	final Function(Map<String, dynamic> book) onBookSelected;
+
+	const BookList({
+		super.key,
+		required this.books,
+		required this.onBookSelected,
+	});
+
+	@override
+	Widget build(BuildContext context) {
+		if (books.isEmpty) return const Center(child: Text("No books found."));
+		
+		return ListView.builder(
+			itemCount: books.length,
+			itemBuilder: (context, index) {
+				final book = books[index];
+
+				return ListTile(
+					title: Text(book['title'].toString()),
+					onTap: () => onBookSelected(book),
+					trailing: const Icon(Icons.delete, color: Colors.red),
+				);
+			},
+		);
+	}
+}
