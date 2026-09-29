@@ -1,20 +1,23 @@
 import 'package:flutter/material.dart';
 import 'package:pettebook/datafetching.dart';
-import 'package:pettebook/searchscreen.dart';
 import 'package:pettebook/components.dart';
-import 'package:pettebook/rearrangeroomsscreen.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
-import 'package:pettebook/libraryviz.dart';
 
-
-class RemoveBooksRoomPage extends StatefulWidget {
-	const RemoveBooksRoomPage({super.key});
+class GenericRoomPage extends StatefulWidget {
+	final String householdId;
+	final String pageTitle;
+	final Function(Map<String, dynamic> book, BuildContext context) onRoomSelected;
+	const GenericRoomPage({
+		super.key,
+		required this.householdId,
+		required this.pageTitle,
+		required this.onRoomSelected,
+	});
 
   @override
-  State<RemoveBooksRoomPage> createState() => _RemoveBooksRoomPageState();
+  State<GenericRoomPage> createState() => _GenericRoomPageState();
 }
 
-class _RemoveBooksRoomPageState extends State<RemoveBooksRoomPage> {
+class _GenericRoomPageState extends State<GenericRoomPage> {
 	late Future<List<Map<String, dynamic>>> _roomsFuture;
   final TextEditingController _searchController = TextEditingController();
 	String _searchQuery = '';
@@ -34,7 +37,7 @@ class _RemoveBooksRoomPageState extends State<RemoveBooksRoomPage> {
 	@override
 	Widget build(BuildContext context) {
 		return Scaffold(
-			appBar: AppBar(title: const Text("Select room to remove books from")),
+			appBar: AppBar(title: Text(widget.pageTitle)),
 			body: Column(
 				children: [
 					Padding(
@@ -82,31 +85,18 @@ class _RemoveBooksRoomPageState extends State<RemoveBooksRoomPage> {
 
 								return RoomGrid(
 									rooms: filteredRooms,
-									onRoomSelected: (room) {
-										Navigator.push(
-											context,
-											MaterialPageRoute(
-												builder: (context) => GenericShelvesPage(
-													roomId: room['room_id'].toString(),
-													roomName: room['room_name'].toString(),
-													householdId: room['household_id'].toString(),
-													pageTitle: "Select to remove books",
-													onShelfSelected: (shelf, context) {
-														Navigator.push(
-															context,
-															MaterialPageRoute(
-																builder: (context) => RemoveBooksBooksPage(
-																	shelfId: shelf['shelf_id'].toString(),
-																	shelfName: shelf['shelf_name'].toString(),
-																	householdId: shelf['household_id'].toString(),
-																),
-															),
-														);
-													},
-												), //RemoveBooksShelvesPage
-											), //MaterialPageRoute
-										);
-									},
+									onRoomSelected: (room) => widget.onRoomSelected(room, context),//{
+										//Navigator.push(
+										//	context,
+										//	MaterialPageRoute(
+										//		builder: (context) => RemoveBooksShelvesPage(
+										//			roomId: room['room_id'].toString(),
+										//			roomName: room['room_name'].toString(),
+										//			householdId: room['household_id'].toString(),
+										//		), //RemoveBooksShelvesPage
+										//	), //MaterialPageRoute
+										//);
+									//},
 								); //RoomGrid
 							}, //Expanded.builder
 						), //FutureBuilder
@@ -117,30 +107,36 @@ class _RemoveBooksRoomPageState extends State<RemoveBooksRoomPage> {
 	} //Widget.build
 } //_RemoveBookRoomPageState
 
-class RemoveBooksBooksPage extends StatefulWidget {
-	final String shelfId;
-	final String shelfName;
+
+class GenericShelvesPage extends StatefulWidget {
+	final String roomId;
+	final String roomName;
 	final String householdId;
-	const RemoveBooksBooksPage({
-		super.key, 
-		required String this.shelfId,
-		required String this.shelfName,
-		required String this.householdId
+	final String pageTitle;
+	final Function(Map<String, dynamic> shelf, BuildContext context) onShelfSelected;
+
+	const GenericShelvesPage({
+		super.key,
+		required this.roomId,
+		required this.roomName,
+		required this.householdId,
+		required this.pageTitle,
+		required this.onShelfSelected,
 	});
 
-  @override
-  State<RemoveBooksBooksPage> createState() => _RemoveBooksBooksPageState();
+	@override
+	State<GenericShelvesPage> createState() => _GenericShelvesPageState();
 }
 
-class _RemoveBooksBooksPageState extends State<RemoveBooksBooksPage> {
-	late Future<List<Map<String, dynamic>>> _booksFuture;
-  final TextEditingController _searchController = TextEditingController();
+class _GenericShelvesPageState extends State<GenericShelvesPage> {
+	late Future<List<Map<String, dynamic>>> _shelvesFuture;
+	final TextEditingController _searchController = TextEditingController();
 	String _searchQuery = '';
 
   @override
   void initState() {
     super.initState();
-		_booksFuture = fetchBooks(widget.shelfId);
+		_shelvesFuture = fetchShelves(widget.roomId);
   }
 
 	@override
@@ -152,7 +148,7 @@ class _RemoveBooksBooksPageState extends State<RemoveBooksBooksPage> {
 	@override
 	Widget build(BuildContext context) {
 		return Scaffold(
-			appBar: AppBar(title: const Text("Select books to remove from library")),
+			appBar: AppBar(title: Text(widget.pageTitle)),
 			body: Column(
 				children: [
 					Padding(
@@ -160,7 +156,7 @@ class _RemoveBooksBooksPageState extends State<RemoveBooksBooksPage> {
 						child: TextField(
 							controller: _searchController,
 							decoration: InputDecoration(
-								hintText: 'Search books...',
+								hintText: 'Search shelves...',
 								prefixIcon: const Icon(Icons.search),
 								border: OutlineInputBorder(borderRadius: BorderRadius.circular(12),),
 								suffixIcon: _searchQuery.isNotEmpty
@@ -183,7 +179,7 @@ class _RemoveBooksBooksPageState extends State<RemoveBooksBooksPage> {
 				
 					Expanded(
 						child: FutureBuilder<List<Map<String, dynamic>>>(
-							future: _booksFuture,
+							future: _shelvesFuture,
 							builder: (context, snapshot) {
 								if (snapshot.connectionState == ConnectionState.waiting) {
 									return const Center(child: CircularProgressIndicator());
@@ -192,23 +188,16 @@ class _RemoveBooksBooksPageState extends State<RemoveBooksBooksPage> {
 									return Center(child: Text("Error: ${snapshot.error}"));
 								}
 
-								final books = snapshot.data ?? [];
-								final filteredBooks = books.where((book) {
-									final name = book['title'].toString().toLowerCase();
+								final shelves = snapshot.data ?? [];
+								final filteredShelves= shelves.where((shelf) {
+									final name = shelf['shelf_name'].toString().toLowerCase();
 									return name.contains(_searchQuery);
 								}).toList();
 
-								return BookList(
-									books: filteredBooks,
-									onBookSelected: (book) async {
-  									final supabase = Supabase.instance.client;
-										final bookId = book['book_id'];
-  									final response = await supabase
-  									  .from('book_tab')
-  									  .delete()
-  									  .eq('book_id', bookId);
-									},
-								); //ShelfGrid
+								return ShelfList(
+									shelves: filteredShelves,
+									onShelfSelected: (shelf) => widget.onShelfSelected(shelf, context),
+								); //ShelfList
 							}, //Expanded.builder
 						), //FutureBuilder
 					), // Expanded
@@ -216,4 +205,5 @@ class _RemoveBooksBooksPageState extends State<RemoveBooksBooksPage> {
 			), //Column
 		); //Scaffold
 	} //Widget.build
-} //_RemoveBookShelfPageState
+}
+
