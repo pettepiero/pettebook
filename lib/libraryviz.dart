@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:pettebook/datafetching.dart';
 import 'package:pettebook/components.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 class GenericRoomPage extends StatefulWidget {
 	final String householdId;
@@ -114,6 +115,7 @@ class GenericShelvesPage extends StatefulWidget {
 	final String householdId;
 	final String pageTitle;
 	final Function(Map<String, dynamic> shelf, BuildContext context) onShelfSelected;
+	final bool showAddButton;
 
 	const GenericShelvesPage({
 		super.key,
@@ -122,6 +124,7 @@ class GenericShelvesPage extends StatefulWidget {
 		required this.householdId,
 		required this.pageTitle,
 		required this.onShelfSelected,
+		this.showAddButton = false,
 	});
 
 	@override
@@ -144,6 +147,93 @@ class _GenericShelvesPageState extends State<GenericShelvesPage> {
 		_searchController.dispose();
 		super.dispose();
 	}
+
+  Future<void> _showAddShelfDialog(BuildContext context) async {
+    final TextEditingController nameController = TextEditingController();
+    final supabase = Supabase.instance.client;
+    String? errorMessage;
+
+    await showDialog(
+      context: context,
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (context, setDialogState) {
+            return AlertDialog(
+              title: const Text("Add New Shelf"),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  TextField(
+                    controller: nameController,
+                    decoration: const InputDecoration(
+                      labelText: "Shelf Name",
+                      hintText: "e.g. Wooden Shelf",
+                    ),
+                    textCapitalization: TextCapitalization.words,
+                    autofocus: true,
+                  ),
+                  if (errorMessage != null) ...[
+                    const SizedBox(height: 8),
+                    Text(
+                      errorMessage!,
+                      style: const TextStyle(color: Colors.red, fontSize: 12),
+                    ),
+                  ],
+                ],
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context), 
+                  child: const Text("Cancel"),
+                ),
+                FilledButton(
+                  onPressed: () async {
+                    final newShelfName = nameController.text.trim();
+                    if (newShelfName.isEmpty) return;
+
+                    setDialogState(
+                      () => errorMessage = null,
+                    );
+
+                    // Check if the shelf already exists in this room or in general
+                    // if this household has a shelf with the same name 
+                    try {
+                      await supabase.from('bookshelf_tab').insert({
+                        'shelf_name': newShelfName,
+                        'room_id': widget.roomId,
+                        'household_id': widget.householdId,
+                      });
+
+                      debugPrint("Shelf added successfully!");
+
+                      if (context.mounted) {
+                        Navigator.pop(context);
+                        setState(() {
+                          _shelvesFuture = fetchShelves(widget.roomId); 
+                        });
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(content: Text("Added $newShelfName")),
+                        );
+                      }
+                    } on PostgrestException catch (error) {
+                      if (error.code == '23505') {
+                        debugPrint("A shelf with this name already exists in this room.");
+                      } else {
+                        debugPrint("A database error occurred: ${error.message}");
+                      }
+                    } catch (e) {
+                      debugPrint("An unexpected error occurred: $e");
+                    }
+                  },  
+                  child: const Text("Save")
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+  }
 
 	@override
 	Widget build(BuildContext context) {
@@ -203,6 +293,12 @@ class _GenericShelvesPageState extends State<GenericShelvesPage> {
 					), // Expanded
 				], //Children
 			), //Column
+      floatingActionButton: widget.showAddButton
+				? FloatingActionButton(
+					onPressed: () => _showAddShelfDialog(context),
+					child: const Icon(Icons.add),
+					)
+				: null,
 		); //Scaffold
 	} //Widget.build
 }

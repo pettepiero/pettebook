@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import 'roomshelvesscreen.dart';
 import 'package:pettebook/datafetching.dart';
 import 'package:pettebook/removebooksscreen.dart';
 import 'package:pettebook/components.dart';
@@ -299,7 +298,8 @@ class _RearrangeRoomsPageState extends State<RearrangeRoomsPage> {
 										pageTitle: "Manage Shelves in ${room['room_name']}",
 										onShelfSelected: (shelf, context) {
 											_showEditShelfDialog(context, shelf);
-										}
+										},
+										showAddButton: true,
 									), //RemoveBooksShelvesPage
 								), //MaterialPageRoute
 							);
