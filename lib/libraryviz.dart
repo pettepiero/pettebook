@@ -279,6 +279,8 @@ class _GenericShelvesPageState extends State<GenericShelvesPage> {
 								}
 
 								final shelves = snapshot.data ?? [];
+								debugPrint("Found shelves: $shelves");
+								debugPrint("snapshot: $snapshot");
 								final filteredShelves= shelves.where((shelf) {
 									final name = shelf['shelf_name'].toString().toLowerCase();
 									return name.contains(_searchQuery);

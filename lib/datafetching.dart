@@ -174,11 +174,20 @@ Future<List<Map<String, dynamic>>> fetchRooms() async {
 
 Future<List<Map<String, dynamic>>> fetchShelves(String roomId) async {
   final supabase = Supabase.instance.client;
-  final response = await supabase
-    .from('library_view')
-    .select('shelf_name')
-    .eq('room_name', roomId)
-    .order('shelf_name', ascending: true);
+  //final response = await supabase
+  //  .from('library_view')
+  //  .select('shelf_name')
+  //  .eq('room_id', roomId)
+  //  .order('shelf_name', ascending: true);
+
+	final response = await supabase
+		.from('bookshelf_tab')
+		.select('shelf_name, shelf_id')
+		.eq('room_id', roomId)
+		.order('shelf_name', ascending: true);
+
+	debugPrint("\n\t In fetchShelves: response = $response");
+	debugPrint("\t In fetchShelves: used roomId = $roomId");
 
   return List<Map<String, dynamic>>.from(response);
 }
