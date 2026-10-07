@@ -170,7 +170,10 @@ class _GenericShelvesPageState extends State<GenericShelvesPage> {
 									child: const Text("Rename shelf"),
 								),
 								SimpleDialogOption(
-									onPressed: () {debugPrint("Chose to move shelf");},
+									onPressed: () {
+										Navigator.pop(innerContext);
+										_moveShelfToAnotherRoomDialog(context, shelf);
+									},
 									child: const Text("Move to another room"),
 								),
 								SimpleDialogOption(
@@ -190,7 +193,80 @@ class _GenericShelvesPageState extends State<GenericShelvesPage> {
   }
 
 
+	/// This function allows a shelf to be moved to a different, existing room using a SimpleDialog
+	Future<void> _moveShelfToAnotherRoomDialog(BuildContext context, Map<String, dynamic> shelf) async {
+    final supabase = Supabase.instance.client;
+    String? errorMessage;
 
+		final allRooms = await fetchRooms();
+		final destinationRooms = allRooms.where((room) {
+			return room['room_id'].toString() != widget.roomId;
+		}).toList();
+
+		if (!context.mounted) return;
+
+		if (destinationRooms.isEmpty) {
+			ScaffoldMessenger.of(context).showSnackBar(
+				const SnackBar(content: Text("No other rooms available to move to.")),
+			);
+			return;
+		}
+
+    await showDialog(
+      context: context,
+			barrierDismissible: true,
+      builder: (dialogContext) {
+      	return SimpleDialog(
+          title: const Text("Select destination room"),
+					children: destinationRooms.map((room) {
+						return SimpleDialogOption(
+							onPressed: () async {
+								Navigator.pop(dialogContext);
+
+								await _executeMove(context, shelf, room);
+							},
+							child: Text(room['room_name'].toString()),
+            );
+          }).toList(),
+        );
+      },
+    );
+	}
+
+	Future<void> _executeMove(BuildContext context, Map<String, dynamic> shelf, Map<String, dynamic> destinationRoom) async {
+		final supabase = Supabase.instance.client;
+
+		try {
+			await supabase
+				.from('bookshelf_tab')
+				.update({'room_id': destinationRoom['room_id']})
+				.eq('shelf_id', shelf['shelf_id']);
+
+			if (context.mounted) {
+				setState(() {
+					_shelvesFuture = fetchShelves(widget.roomId);
+				});
+
+				ScaffoldMessenger.of(context).showSnackBar(
+					SnackBar(
+						content: Text("Moved to ${destinationRoom['room_name']}"),
+					),
+				);
+			}
+		} catch (e) {
+			debugPrint("Error moving shelf: $e");
+			if (context.mounted) {
+				ScaffoldMessenger.of(context).showSnackBar(
+					const SnackBar(content: Text("Failed to move shelf.")),
+				);
+			}
+		}
+	}
+
+	/// This function shows a dialog that the user can interact with to choose a new name
+	/// for the selected shelf. Some checks are performed on the candidate name before allowing
+	/// the modification of the name. In particular, a name that is already assigned to an
+	/// existing shelf will not be allowed.
   Future<void> _renameShelfDialog(BuildContext context, Map<String, dynamic> shelf) async {
     final TextEditingController nameController = TextEditingController();
     final supabase = Supabase.instance.client;
