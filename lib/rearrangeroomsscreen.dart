@@ -140,43 +140,6 @@ class _RearrangeRoomsPageState extends State<RearrangeRoomsPage> {
     );
   }
 
-  Future<void> _showEditShelfDialog(BuildContext context, Map<String, dynamic> shelf) async {
-    final TextEditingController nameController = TextEditingController();
-    final supabase = Supabase.instance.client;
-    String? errorMessage;
-
-    await showDialog(
-      context: context,
-      builder: (context) {
-        return StatefulBuilder(
-          builder: (context, setDialogState) {
-            return SimpleDialog(
-              title: const Text("Edit shelf"),
-             	children: <Widget>[
-								SimpleDialogOption(
-									onPressed: () {debugPrint("Chose to rename shelf");},
-									child: const Text("Rename shelf"),
-								),
-								SimpleDialogOption(
-									onPressed: () {debugPrint("Chose to move shelf");},
-									child: const Text("Move to another room"),
-								),
-								SimpleDialogOption(
-									onPressed: () {debugPrint("Chose to delete shelf");},
-									child: const Text("Delete shelf"),
-								),
-								SimpleDialogOption(
-									onPressed: () {debugPrint("Chose to delete shelf and its contained books");},
-									child: const Text("Delete shelf and its contained books"),
-								),
-							],
-            );
-          },
-        );
-      },
-    );
-  }
-
 
   @override
   Widget build(BuildContext context) {
@@ -214,10 +177,7 @@ class _RearrangeRoomsPageState extends State<RearrangeRoomsPage> {
 										roomName: room['room_name'].toString(),
 										householdId: room['household_id'].toString(),
 										pageTitle: "Manage Shelves in ${room['room_name']}",
-										onShelfSelected: (shelf, context) {
-											_showEditShelfDialog(context, shelf);
-										},
-										showAddButton: true,
+										isManageMode: true,
 									), //RemoveBooksShelvesPage
 								), //MaterialPageRoute
 							);

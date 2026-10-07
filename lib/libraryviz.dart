@@ -114,8 +114,9 @@ class GenericShelvesPage extends StatefulWidget {
 	final String roomName;
 	final String householdId;
 	final String pageTitle;
-	final Function(Map<String, dynamic> shelf, BuildContext context) onShelfSelected;
-	final bool showAddButton;
+	final Function(Map<String, dynamic> shelf, BuildContext context)? onShelfSelected;
+
+	final bool isManageMode;
 
 	const GenericShelvesPage({
 		super.key,
@@ -123,8 +124,8 @@ class GenericShelvesPage extends StatefulWidget {
 		required this.roomName,
 		required this.householdId,
 		required this.pageTitle,
-		required this.onShelfSelected,
-		this.showAddButton = false,
+		this.onShelfSelected,
+		this.isManageMode = false,
 	});
 
 	@override
@@ -147,6 +148,136 @@ class _GenericShelvesPageState extends State<GenericShelvesPage> {
 		_searchController.dispose();
 		super.dispose();
 	}
+
+  Future<void> _showEditShelfDialog(BuildContext context, Map<String, dynamic> shelf) async {
+    final TextEditingController nameController = TextEditingController();
+    final supabase = Supabase.instance.client;
+    String? errorMessage;
+
+    await showDialog(
+      context: context,
+      builder: (dialogContext) {
+        return StatefulBuilder(
+          builder: (innerContext, setDialogState) {
+            return SimpleDialog(
+              title: const Text("Edit shelf"),
+             	children: <Widget>[
+								SimpleDialogOption(
+									onPressed: () {
+											Navigator.pop(dialogContext);
+											_renameShelfDialog(context, shelf);
+									},
+									child: const Text("Rename shelf"),
+								),
+								SimpleDialogOption(
+									onPressed: () {debugPrint("Chose to move shelf");},
+									child: const Text("Move to another room"),
+								),
+								SimpleDialogOption(
+									onPressed: () {debugPrint("Chose to delete shelf");},
+									child: const Text("Delete shelf"),
+								),
+								SimpleDialogOption(
+									onPressed: () {debugPrint("Chose to delete shelf and its contained books");},
+									child: const Text("Delete shelf and its contained books"),
+								),
+							],
+            );
+          },
+        );
+      },
+    );
+  }
+
+
+
+  Future<void> _renameShelfDialog(BuildContext context, Map<String, dynamic> shelf) async {
+    final TextEditingController nameController = TextEditingController();
+    final supabase = Supabase.instance.client;
+    String? errorMessage;
+
+    await showDialog(
+      context: context,
+			barrierDismissible: true,
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (context, setDialogState) {
+            return AlertDialog(
+              title: const Text("Rename Shelf"),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  TextField(
+                    controller: nameController,
+                    decoration: const InputDecoration(
+                      labelText: "Shelf Name",
+                      hintText: "e.g. Wooden Shelf",
+                    ),
+                    textCapitalization: TextCapitalization.words,
+                    autofocus: true,
+                  ),
+                  if (errorMessage != null) ...[
+                    const SizedBox(height: 8),
+                    Text(
+                      errorMessage!,
+                      style: const TextStyle(color: Colors.red, fontSize: 12),
+                    ),
+                  ],
+                ],
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context), 
+                  child: const Text("Cancel"),
+                ),
+                FilledButton(
+                  onPressed: () async {
+                    final newShelfName = nameController.text.trim();
+                    if (newShelfName.isEmpty) return;
+
+                    setDialogState(
+                      () => errorMessage = null,
+                    );
+
+                    // Check if the shelf already exists in this room or in general
+                    // if this household has a shelf with the same name 
+                    try {
+											debugPrint("\n\n shelf: $shelf");
+                      await supabase
+												.from('bookshelf_tab')
+												.update({'shelf_name': newShelfName})
+												.eq('shelf_id', shelf['shelf_id']);
+
+                      debugPrint("Shelf renamed successfully!");
+
+                      if (context.mounted) {
+                        Navigator.pop(context);
+                        setState(() {
+                          _shelvesFuture = fetchShelves(widget.roomId);  //Unsure about what to do here
+                        });
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(content: Text("Renamed to $newShelfName")),
+                        );
+                      }
+                    } on PostgrestException catch (error) {
+                      if (error.code == '23505') {
+                        debugPrint("A shelf with this name already exists in this room.");
+                      } else {
+                        debugPrint("A database error occurred in rearrangeroomsscreen.dart: ${error.message}");
+                      }
+                    } catch (e) {
+                      debugPrint("An unexpected error occurred: $e");
+                    }
+                  },  
+                  child: const Text("Rename")
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+  }
 
   Future<void> _showAddShelfDialog(BuildContext context) async {
     final TextEditingController nameController = TextEditingController();
@@ -288,14 +419,20 @@ class _GenericShelvesPageState extends State<GenericShelvesPage> {
 
 								return ShelfList(
 									shelves: filteredShelves,
-									onShelfSelected: (shelf) => widget.onShelfSelected(shelf, context),
+									onShelfSelected: (shelf) {
+										if (widget.isManageMode) {
+											_showEditShelfDialog(context, shelf);
+										} else if (widget.onShelfSelected != null) {
+											widget.onShelfSelected!(shelf, context);
+										}
+									} 
 								); //ShelfList
 							}, //Expanded.builder
 						), //FutureBuilder
 					), // Expanded
 				], //Children
 			), //Column
-      floatingActionButton: widget.showAddButton
+      floatingActionButton: widget.isManageMode
 				? FloatingActionButton(
 					onPressed: () => _showAddShelfDialog(context),
 					child: const Icon(Icons.add),
