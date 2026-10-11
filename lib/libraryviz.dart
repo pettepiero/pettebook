@@ -184,7 +184,10 @@ class _GenericShelvesPageState extends State<GenericShelvesPage> {
 									child: const Text("Delete shelf"),
 								),
 								SimpleDialogOption(
-									onPressed: () {debugPrint("Chose to delete shelf and its contained books");},
+									onPressed: () {
+										debugPrint("Chose to delete shelf and its contained books");
+										_deleteShelfWithBooks(context, shelf);
+										},
 									child: const Text("Delete shelf and its contained books"),
 								),
 							],
@@ -195,12 +198,46 @@ class _GenericShelvesPageState extends State<GenericShelvesPage> {
     );
   }
 
+
+	/// This function removes a shelf and all its contained books
+	Future<void> _deleteShelfWithBooks(BuildContext context, Map<String, dynamic> shelf) async {
+		final supabase = Supabase.instance.client;
+
+		try {
+			// delete the books
+			await supabase
+				.from('book_tab')
+				.delete()
+				.eq('shelf_id', shelf['shelf_id']);
+			// delete the shelf	
+			await supabase
+				.from('bookshelf_tab')
+				.delete()
+				.eq('shelf_id', shelf['shelf_id']);
+
+			if (context.mounted){
+				ScaffoldMessenger.of(context).showSnackBar(
+					const SnackBar(content: Text("Successfully removed shelf and its contained books.")),
+				);
+				setState(() {
+					_shelvesFuture = fetchShelves(widget.roomId);
+				});
+			}
+		} catch (e) {
+			debugPrint("Error deleting shelf and contained books: $e");
+			if (context.mounted){
+				ScaffoldMessenger.of(context).showSnackBar(
+					const SnackBar(content: Text("Failed to remove shelf and its contained books.")),
+				);
+			}
+		}
+	}
+
 	/// This function removes a shelf but keeps the contained books in the DB. After the operation, 
 	/// these books will have an unassigned shelf attribute. This logic is performed on the database
 	/// constraints.
 	Future<void> _deleteShelfNotBooks(BuildContext context, Map<String, dynamic> shelf) async {
 		final supabase = Supabase.instance.client;
-		String? errorMessage;
 
 		try {
 			await supabase
