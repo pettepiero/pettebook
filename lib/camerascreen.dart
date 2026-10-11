@@ -16,7 +16,7 @@ class CameraScreen extends StatefulWidget {
 
 class _CameraScreenState extends State<CameraScreen> {
   List<String> scannedIsbns = [];
-  bool isLookingForCode = false;
+  bool isLookingForCode = true;
 
   MobileScannerController controller = MobileScannerController(
     facing: CameraFacing.back,
@@ -32,6 +32,12 @@ class _CameraScreenState extends State<CameraScreen> {
     super.initState();
     _checkCameraPermission();
   }
+
+	@override
+	void dispose() {
+		controller.dispose();
+		super.dispose();
+	}
 
   Future<void> _checkCameraPermission() async {
 
@@ -242,6 +248,7 @@ class _CameraScreenState extends State<CameraScreen> {
             TextButton(
               onPressed: () {
                 Navigator.pop(context);
+								setState(() => isLookingForCode = true);
               }, 
               //child: const Text("Discard", style: TextStyle(color: AppTheme.altPrimColour)),
               child: const Text("Discard"),
@@ -250,6 +257,7 @@ class _CameraScreenState extends State<CameraScreen> {
               onPressed: () {
                 setState(() {
                   scannedIsbns.add(isbn);
+									isLookingForCode = true;
                 });
                 Navigator.pop(context);
               }, 
