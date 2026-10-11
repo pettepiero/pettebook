@@ -177,7 +177,10 @@ class _GenericShelvesPageState extends State<GenericShelvesPage> {
 									child: const Text("Move to another room"),
 								),
 								SimpleDialogOption(
-									onPressed: () {debugPrint("Chose to delete shelf");},
+									onPressed: () {
+										Navigator.pop(innerContext);
+										_deleteShelfNotBooks(context, shelf);
+									},
 									child: const Text("Delete shelf"),
 								),
 								SimpleDialogOption(
@@ -191,6 +194,34 @@ class _GenericShelvesPageState extends State<GenericShelvesPage> {
       },
     );
   }
+
+	/// This function removes a shelf but keeps the contained books in the DB. After the operation, 
+	/// these books will have an unassigned shelf attribute. This logic is performed on the database
+	/// constraints.
+	Future<void> _deleteShelfNotBooks(BuildContext context, Map<String, dynamic> shelf) async {
+		final supabase = Supabase.instance.client;
+		String? errorMessage;
+
+		try {
+			await supabase
+				.from('bookshelf_tab')
+				.delete()
+				.eq('shelf_id', shelf['shelf_id']);	
+			
+			if (context.mounted) {
+				setState(() {
+					_shelvesFuture = fetchShelves(widget.roomId);
+				});
+			}
+		} catch (e) {
+			debugPrint("Error deleting shelf: $e");
+			if (context.mounted) {
+				ScaffoldMessenger.of(context).showSnackBar(
+					const SnackBar(content: Text("Failed to remove shelf.")),
+				);
+			}
+		}
+	}
 
 
 	/// This function allows a shelf to be moved to a different, existing room using a SimpleDialog
