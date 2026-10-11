@@ -180,6 +180,9 @@ class ExternalBookDetailScreen extends StatelessWidget {
                                   borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
                                 ),
                                 builder: (context) {
+
+																	debugPrint("\n\n In  ExternalBookDetailPage: edition: $edition");
+
                                   return ShelfSelectionSheet(
                                     book: edition, 
                                     userId: userId

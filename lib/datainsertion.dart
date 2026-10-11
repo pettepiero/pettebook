@@ -307,5 +307,6 @@ Future<bool> manualInsertion(Map<String, dynamic> book) async {
 
 /// Gets missing info when ISBN is not directly found on OL catalog.
 Future<Map<String, dynamic>> getMissingInfo(Map<String, dynamic> book) {
+	debugPrint("\n\n In getMissingInfo: book = $book");
   throw UnimplementedError();
 }

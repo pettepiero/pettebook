@@ -117,6 +117,9 @@ class _RemoveBooksRoomPageState extends State<RemoveBooksRoomPage> {
 	} //Widget.build
 } //_RemoveBookRoomPageState
 
+
+/// Widget that is seen once a room and a shelf has been selected and the user can pick
+/// which books to remove from a list.
 class RemoveBooksBooksPage extends StatefulWidget {
 	final String shelfId;
 	final String shelfName;
@@ -207,6 +210,17 @@ class _RemoveBooksBooksPageState extends State<RemoveBooksBooksPage> {
   									  .from('book_tab')
   									  .delete()
   									  .eq('book_id', bookId);
+
+										// Refresh the UI
+										if (context.mounted) {
+											setState(() {
+												_booksFuture = fetchBooks(widget.shelfId);
+											});
+
+											ScaffoldMessenger.of(context).showSnackBar(
+												SnackBar(content: Text("${book['title']} removed")),
+											);
+										}
 									},
 								); //ShelfGrid
 							}, //Expanded.builder
