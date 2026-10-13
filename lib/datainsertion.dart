@@ -25,7 +25,7 @@ Future<bool> bookAdder({
 }
 
 /// Function to add a book using its ISBN code. First, it checks if
-/// the ISBN code is already present in the databse. If it isn't, it
+/// the ISBN code is already present in the database. If it isn't, it
 /// fetches all the data it can using the OpenLibrary (OL) ISBN API. Then
 /// it retrieves the author information using its OL author key and publisher
 /// information. Once it has all the data, it adds the entry to the database.
@@ -116,12 +116,14 @@ Future<bool> isPresentISBN(String isbn, {Future<bool> Function(String colName, S
 /// Note: authorId is first set to null, and then it is obtained by the dedicated
 /// function getAuthorID. Same thing happens for publisherId.
 Future<Map<String, dynamic>> olBookDataExtractor(Map<String, dynamic> book) async {
-  debugPrint("in olBookDataExtractor");
+  debugPrint("\nin olBookDataExtractor");
   debugPrint("type of book['authors']: ${book['authors'].runtimeType}");
   debugPrint("isbn_13: ${book['isbn_13']}");
 
   final authorId = await getAuthorID(authors: book['authors']);
+	debugPrint("\nReturned from getAuthorId");
   final publisherId = await getPublisherID(publishers: book['publishers']);
+	debugPrint("\nReturned from getPublisherId");
 
   debugPrint("\n\n Obtained authorId: $authorId and publisherId: $publisherId");
 	debugPrint("isbn_13: ${book['isbn_13']}");
@@ -177,6 +179,8 @@ Future<List<String>?> getAuthorID({required List<dynamic> authors}) async {
       debugPrint("DEBUG: url: $url");
       final response = await http.get(url);
 
+			debugPrint("DEBUG: response.statusCode: ${response.statusCode}");
+
       if (response.statusCode == 200){
         final data = json.decode(response.body);
 
@@ -186,6 +190,8 @@ Future<List<String>?> getAuthorID({required List<dynamic> authors}) async {
         candidateNames.insert(0, personalName);
 
         String? matchedAuthorId;
+
+				debugPrint("List of candidate names: $candidateNames");
 
         // Now we need to search for personalName in database and if present
         // retrieve the index. If not present, repeat with alternateNames. If
@@ -214,6 +220,8 @@ Future<List<String>?> getAuthorID({required List<dynamic> authors}) async {
             "openlibrary_key" : authorPath,
             "alternate_names" : candidateNames,
           };
+
+          debugPrint("DEBUG: newAuthorData: $newAuthorData");
 
           final insertResponse = await supabase
             .from('author_tab')
@@ -245,6 +253,7 @@ Future<List<String>?> getAuthorID({required List<dynamic> authors}) async {
 /// eventually returns their pub_id. If they are not present, it adds them to the
 /// database and returns the new id.
 Future<List<String>?> getPublisherID({required List<dynamic> publishers}) async {
+	debugPrint("\nIn getPublisherId: publishers = $publishers");
   final supabase = Supabase.instance.client;
   List<String> processedPublisherIds = []; 
 
