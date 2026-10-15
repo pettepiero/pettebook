@@ -111,6 +111,9 @@ Future<List<Map<String, dynamic>>> openlibrarySearch(String query, BuildContext 
   }
 }
 
+/// This function returns a list of available editions for a given work from OpenLibrary.
+/// It requires the parameter workKey, meaning a string contaning the work key that is used
+/// in OpenLibrary to denote that work.
 Future<List<Map<String, dynamic>>> fetchEditionsFromWork(String workKey) async {
   if (workKey.isEmpty) return [];
 
@@ -123,7 +126,21 @@ Future<List<Map<String, dynamic>>> fetchEditionsFromWork(String workKey) async {
       final data = json.decode(response.body);
       final entries = data['entries'] as List<dynamic>? ?? [];
 
-      return entries.map((edition) {
+			return entries.where((edition) {
+        final publishers = edition['publishers'] as List<dynamic>?;
+        final hasPublisher = publishers != null && publishers.isNotEmpty;
+
+        final isbn13List = edition['isbn_13'] as List<dynamic>?;
+        final isbn10List = edition['isbn_10'] as List<dynamic>?;
+
+        final hasIsbn13 = isbn13List != null && isbn13List.isNotEmpty;
+        final hasIsbn10 = isbn10List != null && isbn10List.isNotEmpty;
+
+        // 3. Keep the edition only if it has a publisher AND at least one ISBN
+        return hasPublisher && (hasIsbn13 || hasIsbn10);
+      })
+
+			.map((edition) {
         final title = edition['title']?.toString() ?? 'Unknown Title';
         final date = edition['publish_date']?.toString() ?? 'Unknown Date';
 

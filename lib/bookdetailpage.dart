@@ -47,6 +47,7 @@ class ExternalBookDetailScreen extends StatelessWidget {
     final Future<List<Map<String, dynamic>>> isbnList = fetchEditionsFromWork(workKey);
 
     debugPrint("Done fetching editions and back to ExternalBookDetailScreen.");
+		debugPrint("Got isbnList: \n$isbnList");
 
     //String imageUrl = '';
 
@@ -135,6 +136,8 @@ class ExternalBookDetailScreen extends StatelessWidget {
                     return const Center(child: Text("No other editions found."));
                   }
                   final editions = snapshot.data;
+									
+									debugPrint("DEBUG: I got this data: ${snapshot.data}");
 
                   return ListView.builder(
                     itemCount: editions!.length, //already checked it has data
