@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:pettebook/theme.dart';
 import 'package:flutter/widget_previews.dart';
+import 'datafetching.dart';
 
 class CameraScreen extends StatefulWidget {
   const CameraScreen({super.key});
@@ -142,7 +143,12 @@ class _CameraScreenState extends State<CameraScreen> {
                 icon: const Icon(Icons.check_circle_outline),
                 label: const Text("Finish & Return List", style: TextStyle(fontSize: 16)),
                 onPressed: () {
-                  Navigator.pop(context, scannedIsbns);
+									Navigator.push(
+										context,
+										MaterialPageRoute(
+											builder: (context) => ListOfBooksToAddScreen(isbns: scannedIsbns),
+										),
+									);
                 }, 
               ),
             )
@@ -269,3 +275,131 @@ class _CameraScreenState extends State<CameraScreen> {
     );
   }
 }
+
+
+class ListOfBooksToAddScreen extends StatefulWidget{
+	final List<String> isbns;
+
+	const ListOfBooksToAddScreen({super.key, required this.isbns});
+
+	@override
+	State<ListOfBooksToAddScreen> createState() => _ListOfBooksToAddScreenState();
+}
+
+class _ListOfBooksToAddScreenState extends State<ListOfBooksToAddScreen> {
+
+	late List<String> _localIsbns;
+	final Map<String, String> _bookTitles = {}; //These are the ones obtained with the search button
+	// bookListData will contain information of all the searched isbns when FloatingActionButton is pressed
+	final Map<String, dynamic> bookListData = {}; 
+	bool _isFetchingAll = false; //Used by circular progress indicator in floating action button
+	bool _searchDone = false;
+
+	@override
+	void initState() {
+		super.initState();
+		_localIsbns = List.from(widget.isbns);
+	}
+
+	@override
+	Widget build(BuildContext context) {
+		return Scaffold(
+			appBar: AppBar(title: const Text("Scanned Isbns")),
+			floatingActionButton: FloatingActionButton(
+				onPressed: _isFetchingAll ? null : () async {
+					setState(() { // to trigger the loading animation
+						_isFetchingAll = true;
+					});
+
+					//Start populating the List with the isbns
+					for (var el in _localIsbns) {
+						final missingData = await olBookInfoFromISBN(el);
+						if (missingData != null) {
+							bookListData[el] = missingData;
+							_bookTitles[el] = missingData['title'] ?? "Unknown Title";
+						}
+					}
+					debugPrint("The bookListData is now: $bookListData");
+
+					if (!mounted) return;
+					setState(() {
+						_isFetchingAll = false;
+						_searchDone = true;
+					});
+					
+					ScaffoldMessenger.of(context).showSnackBar(
+						const SnackBar(content: Text("Finished fetching book data")),
+					);
+
+					// To select shelf to add books to 
+          //showModalBottomSheet(
+          //  context: context, 
+          //  isScrollControlled: true,
+          //  shape: const RoundedRectangleBorder(
+          //    borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+          //  ),
+          //  builder: (context) {
+
+          //    return ShelfSelectionSheet(
+          //      book: edition, 
+          //      userId: userId
+          //    );
+          //  }
+          //);
+					
+				},
+				child: _isFetchingAll
+					? const Padding(
+							padding: EdgeInsets.all(12.0),
+							child: CircularProgressIndicator(
+								strokeWidth: 3.0,
+								color: Colors.white,
+							),
+						)
+					: _searchDone ? const Icon(Icons.check) : const Icon(Icons.search),
+			),
+			body: ListView.builder(
+				itemCount: _localIsbns.length,
+				itemBuilder: (context, index) {
+					String selectedIsbn = _localIsbns[index];
+
+					return ListTile(
+						title: Text(_bookTitles[selectedIsbn] ?? selectedIsbn),
+						leading: const Icon(Icons.book),
+						trailing: Row(
+							mainAxisSize: MainAxisSize.min,
+							children: [
+								IconButton(
+									icon: const Icon(Icons.search),
+									onPressed: () async {
+										if (_bookTitles[selectedIsbn] != null){
+											return;
+										}
+										final Map<String, dynamic>? data = await olBookInfoFromISBN(selectedIsbn);
+
+										if (data != null) {
+											setState(() {
+												_bookTitles[selectedIsbn] = data['title']?.toString() ?? 'Unknown Title';
+											});
+										}
+									},
+								),
+								IconButton(
+									icon: const Icon(Icons.delete),
+									onPressed: () {
+										String selectedIsbn = _localIsbns[index];
+										setState(() {
+											_localIsbns.removeAt(index);
+										});
+									},
+								),
+							],
+						),
+					);
+				},
+			),
+		);
+	}
+}
+
+

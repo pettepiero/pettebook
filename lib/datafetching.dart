@@ -219,3 +219,27 @@ Future<List<Map<String, dynamic>>> fetchBooks(String shelfId) async {
 
   return List<Map<String, dynamic>>.from(response);
 }
+
+
+Future<Map<String, dynamic>>? olBookInfoFromISBN(String isbn) async {
+	debugPrint("\n\nIn olBookInfoFromISBN");
+	if (isbn.length == 13 || isbn.length == 10) {
+  	final url = Uri.parse('https://openlibrary.org/isbn/$isbn.json');
+		debugPrint("Tryin url: $url");
+  	final response = await http.get(url);
+
+  	if (response.statusCode == 200){
+  	  final data = json.decode(response.body);
+			debugPrint("Got data: $data");
+			return data;
+
+		} else {
+			debugPrint("Got no data");
+		}
+		
+	} else {
+		debugPrint("Error: invalid argument isbn: $isbn");
+	}
+	return {};
+
+}

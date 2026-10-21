@@ -58,7 +58,7 @@ class _ScanOrManualScreenState extends State<ScanOrManualScreen> {
 
                   return InkWell(
                     onTap: () {
-                      Navigator.push(
+											final result = Navigator.push(
                           context,
                           MaterialPageRoute(builder: (context) =>
                           item.targetPage)

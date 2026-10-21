@@ -165,16 +165,16 @@ class ExternalBookDetailScreen extends StatelessWidget {
                               ),
                             child: const Text("Add to library"),
                             onPressed: () async {
-			      debugPrint("In onPressed() method.");
+			      									debugPrint("In onPressed() method.");
                               final String? userId = Supabase.instance.client.auth.currentUser?.id;
-			      debugPrint("In onPressed() method: userId: $userId");
+			      									debugPrint("In onPressed() method: userId: $userId");
                               if (userId == null) {
                                 ScaffoldMessenger.of(context).showSnackBar(
                                   const SnackBar(content: Text("Please log in to add books.")),
                                  );
                                 return;
                               }
-			      debugPrint("In onPressed() method: userId is not null. Calling showModelBottomSheet");
+			      									debugPrint("In onPressed() method: userId is not null. Calling showModelBottomSheet");
 
                               showModalBottomSheet(
                                 context: context, 
