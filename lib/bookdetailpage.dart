@@ -187,7 +187,7 @@ class ExternalBookDetailScreen extends StatelessWidget {
 																	debugPrint("\n\n In  ExternalBookDetailPage: edition: $edition");
 
                                   return ShelfSelectionSheet(
-                                    book: edition, 
+                                    books: [edition], 
                                     userId: userId
                                   );
                                 }
@@ -287,13 +287,13 @@ class InternalBookDetailScreen extends StatelessWidget {
 }
 
 
-/// Allows a user to decide which shelf a book will go to when
+/// Allows a user to decide which shelf a list of books will go to when
 /// he tries to add it to its library.
 class ShelfSelectionSheet extends StatelessWidget {
-  final Map<String, dynamic> book;
+  final List<Map<String, dynamic>> books;
   final String userId;
 
-  const ShelfSelectionSheet({super.key, required this.book, required this.userId});
+  const ShelfSelectionSheet({super.key, required this.books, required this.userId});
 
   Future<List<Map<String, dynamic>>> _fetchUserShelves() async {
     final supabase = Supabase.instance.client;
@@ -349,14 +349,14 @@ class ShelfSelectionSheet extends StatelessWidget {
                       onTap: () async {
 
 												debugPrint("\nClosed the bottom sheet and about to call bookAdder.");
-												debugPrint("book: $book");
+												debugPrint("books: $books");
 												debugPrint("shelfId: ${shelf['shelf_id']}");
 												debugPrint("shelf['household_id']: ${shelf['household_id']}");
 												debugPrint("userId: $userId\n");
                         
-                        // 2. Add the book to the selected shelf
-                        bool success = await bookAdder(
-                          book: book, 
+                        // 2. Add the books to the selected shelf
+                        bool success = await listOfBooksAdder(
+                          books: books, 
                           shelfId: shelf['shelf_id'], 
                           householdId: shelf['household_id'],
                           userId: userId
@@ -371,7 +371,7 @@ class ShelfSelectionSheet extends StatelessWidget {
 												} else {
 													ScaffoldMessenger.of(context).showSnackBar(
 														SnackBar(
-															content: Text('Error adding book.'), 
+															content: Text('Error adding books.'), 
 															backgroundColor: Colors.red)
 													);
 												}

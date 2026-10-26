@@ -7,6 +7,8 @@ import 'package:permission_handler/permission_handler.dart';
 import 'package:pettebook/theme.dart';
 import 'package:flutter/widget_previews.dart';
 import 'datafetching.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+import 'bookdetailpage.dart';
 
 class CameraScreen extends StatefulWidget {
   const CameraScreen({super.key});
@@ -287,119 +289,153 @@ class ListOfBooksToAddScreen extends StatefulWidget{
 }
 
 class _ListOfBooksToAddScreenState extends State<ListOfBooksToAddScreen> {
-
 	late List<String> _localIsbns;
 	final Map<String, String> _bookTitles = {}; //These are the ones obtained with the search button
 	// bookListData will contain information of all the searched isbns when FloatingActionButton is pressed
 	final Map<String, dynamic> bookListData = {}; 
 	bool _isFetchingAll = false; //Used by circular progress indicator in floating action button
 	bool _searchDone = false;
+	Set<String> _checkedIsbns = {};
+  String? _userId = "";
+
 
 	@override
 	void initState() {
 		super.initState();
 		_localIsbns = List.from(widget.isbns);
+		_checkedIsbns.addAll(widget.isbns);
+  	_userId = Supabase.instance.client.auth.currentUser?.id;
+		if (_userId == null) {
+			throw Error();
+		}
 	}
 
-	@override
-	Widget build(BuildContext context) {
-		return Scaffold(
-			appBar: AppBar(title: const Text("Scanned Isbns")),
-			floatingActionButton: FloatingActionButton(
-				onPressed: _isFetchingAll ? null : () async {
-					setState(() { // to trigger the loading animation
-						_isFetchingAll = true;
-					});
-
-					//Start populating the List with the isbns
-					for (var el in _localIsbns) {
-						final missingData = await olBookInfoFromISBN(el);
-						if (missingData != null) {
-							bookListData[el] = missingData;
-							_bookTitles[el] = missingData['title'] ?? "Unknown Title";
-						}
-					}
-					debugPrint("The bookListData is now: $bookListData");
-
-					if (!mounted) return;
-					setState(() {
-						_isFetchingAll = false;
-						_searchDone = true;
-					});
-					
-					ScaffoldMessenger.of(context).showSnackBar(
-						const SnackBar(content: Text("Finished fetching book data")),
-					);
-
-					// To select shelf to add books to 
-          //showModalBottomSheet(
-          //  context: context, 
-          //  isScrollControlled: true,
-          //  shape: const RoundedRectangleBorder(
-          //    borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
-          //  ),
-          //  builder: (context) {
-
-          //    return ShelfSelectionSheet(
-          //      book: edition, 
-          //      userId: userId
-          //    );
-          //  }
-          //);
-					
-				},
-				child: _isFetchingAll
-					? const Padding(
-							padding: EdgeInsets.all(12.0),
-							child: CircularProgressIndicator(
-								strokeWidth: 3.0,
-								color: Colors.white,
-							),
-						)
-					: _searchDone ? const Icon(Icons.check) : const Icon(Icons.search),
-			),
-			body: ListView.builder(
-				itemCount: _localIsbns.length,
-				itemBuilder: (context, index) {
-					String selectedIsbn = _localIsbns[index];
-
-					return ListTile(
-						title: Text(_bookTitles[selectedIsbn] ?? selectedIsbn),
-						leading: const Icon(Icons.book),
-						trailing: Row(
-							mainAxisSize: MainAxisSize.min,
-							children: [
-								IconButton(
-									icon: const Icon(Icons.search),
-									onPressed: () async {
-										if (_bookTitles[selectedIsbn] != null){
-											return;
-										}
-										final Map<String, dynamic>? data = await olBookInfoFromISBN(selectedIsbn);
-
-										if (data != null) {
-											setState(() {
-												_bookTitles[selectedIsbn] = data['title']?.toString() ?? 'Unknown Title';
-											});
-										}
-									},
-								),
-								IconButton(
-									icon: const Icon(Icons.delete),
-									onPressed: () {
-										String selectedIsbn = _localIsbns[index];
-										setState(() {
-											_localIsbns.removeAt(index);
-										});
-									},
-								),
-							],
-						),
-					);
-				},
-			),
-		);
+	void _toggleSelectAll() {
+		setState(() {
+			if (_checkedIsbns.length == _localIsbns.length) {
+				_checkedIsbns.clear();
+			} else {
+				_checkedIsbns.addAll(_localIsbns);
+			}
+		});
 	}
+
+  @override
+  Widget build(BuildContext context) {
+    bool allSelected = _checkedIsbns.length == _localIsbns.length;
+
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text("Scanned Isbns"),
+        actions: [
+          TextButton(
+            onPressed: _toggleSelectAll,
+            child: Text(
+              allSelected ? "Deselect All" : "Select All",
+              style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold), 
+            ),
+          ),
+        ],
+      ),
+      
+      body: Column(
+        children: [
+          Expanded(
+            child: ListView.builder(
+              itemCount: _localIsbns.length,
+              itemBuilder: (context, index) {
+                String selectedIsbn = _localIsbns[index];
+                bool isChecked = _checkedIsbns.contains(selectedIsbn);
+
+                return CheckboxListTile(
+                  title: Text(_bookTitles[selectedIsbn] ?? selectedIsbn),
+                  secondary: const Icon(Icons.book),
+                  controlAffinity: ListTileControlAffinity.leading,
+                  value: isChecked,
+                  onChanged: (bool? value) {
+                    setState(() {
+                      if (value == true) {
+                        _checkedIsbns.add(selectedIsbn);
+                      } else {
+                        _checkedIsbns.remove(selectedIsbn);
+                      }
+                    });
+                  },
+                );
+              },
+            ),
+          ),
+          
+          SafeArea(
+            child: Padding(
+              padding: const EdgeInsets.all(12.0),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: ElevatedButton(
+											onPressed: _isFetchingAll ? null : () async {
+												setState(() {
+													_isFetchingAll = true;
+												});
+
+												//Start populating the List with the isbns
+												for (var el in _localIsbns) {
+													final bookData = await olBookInfoFromISBN(el);
+													if (bookData != null) {
+														bookListData[el] = bookData;
+														_bookTitles[el] = bookData['title'] ?? "Unknown Title";
+													}
+												}
+												debugPrint("The bookListData is now: $bookListData");
+
+												if (!mounted) return;
+												setState(() {
+													_isFetchingAll = false;
+													_searchDone = true;
+												});
+												
+												ScaffoldMessenger.of(context).showSnackBar(
+													const SnackBar(content: Text("Finished fetching book data")),
+												);
+											},
+                      child: _isFetchingAll 
+                          ? const SizedBox(
+                              height: 20, 
+                              width: 20, 
+                              child: CircularProgressIndicator(strokeWidth: 2)
+                            )
+                          : const Text("Fetch Info", textAlign: TextAlign.center),
+                    ),
+                  ),
+                  const SizedBox(width: 12), 
+                  Expanded(
+                    child: ElevatedButton(
+                      onPressed: _checkedIsbns.isEmpty ? null : () {
+												// To select shelf to add books to 
+          							showModalBottomSheet(
+          							  context: context, 
+          							  isScrollControlled: true,
+          							  shape: const RoundedRectangleBorder(
+          							    borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+          							  ),
+          							  builder: (context) {
+
+          							    return ShelfSelectionSheet(
+          							      books: bookListData.values.cast<Map<String, dynamic>>().toList(), 
+          							      userId: _userId!
+          							    );
+          							  }
+          							);
+                      },
+                      child: const Text("Add Selected", textAlign: TextAlign.center),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 }
-
-

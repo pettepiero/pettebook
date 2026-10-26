@@ -5,6 +5,27 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:http/http.dart' as http;
 
 
+Future<bool> listOfBooksAdder({
+	required List<Map<String, dynamic>> books,
+  required String shelfId, 
+  required String householdId, 
+  required String userId
+  }) async {
+		for (var book in books) {
+			bool success = await bookAdder(
+				book: book,
+				shelfId: shelfId,
+				householdId: householdId,
+				userId: userId,
+			);
+			if (success!) {
+				debugPrint("In listOfBooksAdder: failed adding book: $book");
+				return false;
+			}
+		}
+		return true;
+}
+
 /// The outermost layer of the methods that allow adding a book to the database.
 Future<bool> bookAdder({
   required Map<String, dynamic> book, 
