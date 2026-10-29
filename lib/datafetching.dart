@@ -5,6 +5,7 @@ import 'package:open_library/models/ol_search_model.dart';
 import 'package:provider/provider.dart';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import 'package:pettebook/sbn.dart';
 
 Future<List<Map<String, dynamic>>> supabaseSearch(String query) async {
   final supabase = Supabase.instance.client;
@@ -242,4 +243,56 @@ Future<Map<String, dynamic>>? olBookInfoFromISBN(String isbn) async {
 	}
 	return {};
 
+}
+
+Future<List<Map<String, dynamic>>> sbnSearchByTitle(String titleQuery, String accessToken) async {
+	if (titleQuery.isEmpty) return [];
+
+	try {
+		//Construct API url
+		final String encodedTitle = Uri.encodeComponent(titleQuery);
+		final Uri url = Uri.parse(
+			'https://api.iccu.sbn.it/sbn/1.0.0/search?titolo=$encodedTitle&format=json'
+			);
+
+		final response = await http.get(
+			url,
+			headers: {
+				'Authorization': 'Bearer $accessToken',
+				'Accept': 'application/json',
+			},
+		);
+
+		if (response.statusCode == 200) {
+			final Map<String, dynamic> data = json.decode(response.body);
+
+			final Map<String, dynamic>? responseBody = data['response'];
+			final List<dynamic> docs = responseBody?['docs'] ?? [];
+
+			return docs.map((doc) {
+				final title = doc['titolo']?.toString() ?? 'Unknown Title';
+				final author = doc['autore']?.toString() ?? 'Unknown Author';
+				final year = doc['anno_pubblicazione']?.toString() ?? '';
+				final pub = doc['editore']?.toString() ?? '';
+				final isbn = doc['isbn']?.toString() ?? '';
+
+
+				return {
+					'title': title,
+					'authors': author,
+					'year': year,
+					'pub': pub,
+					'isbn': isbn,
+					'cover_id': '',
+					'workKey': '',
+				};
+			}).toList();
+		} else {
+			debugPrint('SBN Search failed with status: ${response.statusCode}');
+			return [];
+		}
+	} catch (error) {
+		debugPrint('SBN HTTP Search failed: $error');
+		return [];
+	}
 }

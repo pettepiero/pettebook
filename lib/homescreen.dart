@@ -128,7 +128,8 @@ class _HomeScreenState extends State<HomeScreen> {
           children: [
             MySearchBar(
                 targetSearchScreenBuilder: (context) => SearchScreen(
-                  onSearch: (query) => supabaseSearch(query),
+									showEngineToggle: false,
+                  onSearch: (query, engine) => supabaseSearch(query),
                 ),
                 hintText: "Type to search catalog..."
             ),

@@ -4,12 +4,15 @@ import 'package:pettebook/components.dart';
 
 
 class SearchScreen extends StatefulWidget {
-  final Future<List<Map<String, dynamic>>> Function(String query) onSearch;
+  final Future<List<Map<String, dynamic>>> Function(String query, SearchEngine engine) onSearch;
   final bool isLiveSearch;
+	final bool showEngineToggle;
+
   const SearchScreen({
     super.key,
     required this.onSearch,
     this.isLiveSearch = true,
+		this.showEngineToggle = true,
   });
 
   @override
@@ -24,6 +27,8 @@ class _SearchScreenState extends State<SearchScreen> {
   bool _isLoading = false;
   bool _hasSearched = false;
 
+	SearchEngine _selectedEngine = SearchEngine.openLibrary;
+
   Future<void> _submitSearch(String query) async {
     if (query.isEmpty) return;
 
@@ -33,13 +38,23 @@ class _SearchScreenState extends State<SearchScreen> {
       _searchResults = [];
     });
 
-    final List<Map<String, dynamic>> results = await widget.onSearch(query);
-    debugPrint("\nIn _SearchScreenState: results: $results");
+		try {
 
-    setState(() {
-      _searchResults = results;
-      _isLoading = false;
-    });
+    	final List<Map<String, dynamic>> results = await widget.onSearch(query, _selectedEngine);
+    	debugPrint("\nIn _SearchScreenState: results: $results");
+
+    	setState(() {
+    	  _searchResults = results;
+    	  _isLoading = false;
+    	});
+		} catch (e, stacktrace) {
+			debugPrint("Error during search: $e");
+			debugPrint("Stacktrace: $stacktrace");
+		} finally {
+			setState(() {
+				_isLoading = false;
+			});
+		}
   }
 
   @override
@@ -73,7 +88,7 @@ class _SearchScreenState extends State<SearchScreen> {
           final String searchInput = controller.text.toLowerCase();
           if (searchInput.isEmpty) return [];
 
-          final List<Map<String, dynamic>> results = await widget.onSearch(searchInput);
+          final List<Map<String, dynamic>> results = await widget.onSearch(searchInput, _selectedEngine);
 
           if (results.isEmpty) {
             return [
@@ -126,6 +141,36 @@ class _SearchScreenState extends State<SearchScreen> {
             leading: const Icon(Icons.search),
           ),
         ),
+				
+				if (widget.showEngineToggle)
+					Padding(
+						padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
+						child: SegmentedButton<SearchEngine>(
+							segments: const [
+								ButtonSegment(
+									value: SearchEngine.openLibrary,
+									label: Text('Open Library'),
+									icon: Icon(Icons.public),
+								),
+								ButtonSegment(
+									value: SearchEngine.opacSbn,
+									label: Text('OPAC SBN'),
+									icon: Icon(Icons.account_balance),
+								),
+							],
+							selected: <SearchEngine>{_selectedEngine},
+							onSelectionChanged: (Set<SearchEngine> newSelection) {
+								setState(() {
+									_selectedEngine = newSelection.first;
+
+									if (_submitSearchController.text.isNotEmpty) {
+										_submitSearch(_submitSearchController.text);
+									}
+								});
+							},
+						),
+					),
+							
 
         Expanded(
           child: _buildResultsBody(),

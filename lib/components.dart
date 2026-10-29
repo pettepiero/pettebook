@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+enum SearchEngine {openLibrary, opacSbn}
 
 // Search Bar
 class MySearchBar extends StatelessWidget{

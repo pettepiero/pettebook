@@ -3,7 +3,8 @@ import 'package:pettebook/camerascreen.dart';
 import 'package:pettebook/editcatalogscreen.dart';
 import 'package:pettebook/searchscreen.dart';
 import 'package:pettebook/datafetching.dart';
-
+import 'package:pettebook/components.dart';
+import 'package:pettebook/sbn.dart';
 
 List<String> myBooks = ['1984', 'Dune', 'Narnia'];
 
@@ -33,8 +34,15 @@ class _ScanOrManualScreenState extends State<ScanOrManualScreen> {
         color: Colors.teal[200]!,
         icon: Icon(Icons.search),
         targetPage: SearchScreen(
-          onSearch: (query) => openlibrarySearch(query, context),
           isLiveSearch: false,
+          onSearch: (query, engine) async {
+						print(' -----> UI triggered search for: "$query" using engine: "$engine"');
+						if (engine == SearchEngine.openLibrary) {
+							return await openlibrarySearch(query, context);
+						} else {
+							return await SbnOrchestrator.handleSearch(query);
+						}
+					},
         ),
       ),
     ];
